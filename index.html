@@ -1665,22 +1665,22 @@ function analyzeRouteProvincesAndOutArea() {
 function initMap() {
   map = L.map("map").setView([13.69, 100.75], 9);
 
-  // ใช้ CARTO Voyager และ Esri Street Map ซึ่งอนุญาตให้เปิดจากไฟล์ในเครื่อง (file://) โดยไม่ติด 403 Access Blocked
-  const cartoLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-    maxZoom: 19,
-    subdomains: "abcd",
-    attribution: "© OpenStreetMap © CARTO"
-  });
-
+  // ใช้ Esri World Street Map เป็นหลัก (ฟรี 100% ไม่ต้องใช้ API Key ไม่มีลายน้ำ และเปิดได้ทั้ง file:// และ https://)
   const esriLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
     maxZoom: 19,
     attribution: "© Esri"
   });
 
-  cartoLayer.addTo(map);
+  // OpenStreetMap (ใช้ได้ฟรีบน https://github.io)
+  const osmLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "© OpenStreetMap contributors"
+  });
+
+  esriLayer.addTo(map);
   L.control.layers({
-    "แผนที่ถนน (CARTO)": cartoLayer,
-    "แผนที่ละเอียด (Esri)": esriLayer
+    "แผนที่ถนน (Esri - ฟรี)": esriLayer,
+    "OpenStreetMap (ฟรี)": osmLayer
   }, null, { position: "topright" }).addTo(map);
 
   routeLayer = L.layerGroup().addTo(map);
