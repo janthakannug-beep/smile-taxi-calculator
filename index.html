@@ -1,0 +1,2689 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smile Taxi Service — คำนวณระยะทาง กม. & ราคาทัวร์อัตโนมัติ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+:root {
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-alt: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-soft: #eff6ff;
+  --secondary: #0f766e;
+  --secondary-hover: #115e59;
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --danger: #dc2626;
+  --radius: 14px;
+  --shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Prompt", -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.45;
+  padding-bottom: 32px;
+}
+
+/* Topbar */
+.topbar {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 10px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  font-size: 1.5rem;
+  background: rgba(255, 255, 255, 0.12);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-brand h1 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.topbar-brand p {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.topbar-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.nav-btn.active {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+  font-weight: 600;
+}
+
+/* Main Layout */
+.tab-panel {
+  display: none;
+  padding: 16px 20px;
+  max-width: 1520px;
+  margin: 0 auto;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1120px) {
+  .calc-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.db-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1020px) {
+  .db-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sub-text {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Form Elements */
+.form-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.form-row.align-center {
+  align-items: center;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.form-group.flex-2 {
+  flex: 2;
+  min-width: 200px;
+}
+
+label {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  color: var(--text);
+  background: #fff;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-with-btn {
+  display: flex;
+  gap: 6px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: #fff;
+}
+.btn-secondary:hover {
+  background: var(--secondary-hover);
+}
+
+.btn-outline {
+  background: #fff;
+  border-color: #cbd5e1;
+  color: var(--text);
+}
+.btn-outline:hover {
+  background: var(--surface-alt);
+}
+
+.btn-danger {
+  background: #fee2e2;
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background: #fecaca;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+}
+
+.btn-xs {
+  padding: 3px 7px;
+  font-size: 0.73rem;
+}
+
+/* Unified Route Builder Box */
+.route-builder-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.slot-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 5px 8px;
+  border-radius: 9px;
+  transition: border-color 0.15s;
+}
+
+.slot-row:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.slot-role-badge {
+  color: #fff;
+  font-size: 0.73rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  min-width: 96px;
+  text-align: center;
+}
+
+.slot-place-input {
+  flex: 1;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-size: 0.86rem !important;
+  padding: 3px 6px !important;
+}
+
+.slot-meta-tag {
+  font-size: 0.71rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.route-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Metrics Bar */
+.route-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  gap: 10px;
+  background: #0f172a;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.metric-value {
+  font-size: 1.1rem;
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.map-container {
+  width: 100%;
+  height: 360px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  z-index: 1;
+}
+
+/* Stop Marker Badge on Map */
+.stop-badge {
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.stop-badge.start {
+  background: #16a34a;
+}
+.stop-badge.end {
+  background: #dc2626;
+}
+
+/* Vehicle Cards (Big & Clear) */
+.vehicle-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 640px) {
+  .vehicle-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vehicle-card {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  transition: all 0.15s;
+}
+
+.vehicle-card:hover {
+  border-color: #93c5fd;
+}
+
+.vehicle-card.active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+}
+
+.veh-info h4 {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.veh-price strong {
+  font-size: 1.45rem;
+  color: var(--primary);
+  display: block;
+  line-height: 1.2;
+}
+
+.veh-price span {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+}
+
+/* Clean Control Sections on Right Panel */
+.control-group-box {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 13px;
+  margin-bottom: 10px;
+}
+
+.control-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.control-group-title {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pill-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 6px 11px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.79rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pill-btn:hover {
+  background: #f1f5f9;
+}
+
+.pill-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* Total Banner */
+.total-banner {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  color: #fff;
+  padding: 14px 18px;
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.total-caption {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+}
+
+.total-amount {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #38bdf8;
+  line-height: 1.15;
+}
+
+.total-breakdown {
+  font-size: 0.76rem;
+  color: #e2e8f0;
+  margin-top: 3px;
+}
+
+/* Collapsible Drawers (<details>) */
+.clean-drawer {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.clean-drawer summary {
+  padding: 10px 14px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: var(--surface-alt);
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clean-drawer summary:hover {
+  color: var(--text);
+  background: #f1f5f9;
+}
+
+.clean-drawer[open] summary {
+  border-bottom: 1px solid var(--border);
+  color: var(--primary);
+}
+
+.drawer-body {
+  padding: 12px 14px;
+}
+
+/* Database & Vehicles Editor */
+.vehicles-editor-list,
+.db-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.db-list {
+  max-height: 540px;
+  overflow-y: auto;
+}
+
+.vehicle-edit-card,
+.subform-box {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.db-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.db-item-info h4 {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.db-item-info p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge-info {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #0f172a;
+  color: #fff;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+}
+
+</style>
+</head>
+<body>
+  <!-- Top Header -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-logo">🚕</span>
+      <div>
+        <h1>Smile Taxi Service — คำนวณระยะทาง กม. & เรททัวร์</h1>
+        <p>วางชื่อสถานที่ หรือ ลิงก์ Google Maps เพื่อคำนวณระยะทางและราคาอัตโนมัติ</p>
+      </div>
+    </div>
+    <nav class="topbar-nav">
+      <button class="nav-btn active" data-tab="tab-vehicles">🚐 คำนวณระยะทาง & เรทราคา</button>
+      <button class="nav-btn" data-tab="tab-database">🏖️ ตารางทัวร์ & คลังสถานที่</button>
+    </nav>
+  </header>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- TAB 1: MAIN CALCULATOR & RATE SETTINGS -->
+  <main id="tab-vehicles" class="tab-panel active">
+    <div class="calc-grid">
+      <!-- LEFT COLUMN: ROUTE & MAP -->
+      <section class="card">
+        <div class="card-header">
+          <h2>📍 1. จุดรับ → จุดแวะ → จุดส่ง (วางชื่อหรือลิงก์ Google Maps)</h2>
+          <button id="btn-reset-route" class="btn btn-outline btn-sm">ล้างหมุดเริ่มใหม่</button>
+        </div>
+
+        <!-- Quick Preset Trip Selector (1 compact row) -->
+        <div class="form-row" style="margin-bottom:10px;">
+          <div class="form-group" style="max-width:190px;">
+            <select id="select-zone-filter">
+              <option value="all">📋 ทุกหมวดทัวร์/แท็กซี่</option>
+            </select>
+          </div>
+          <div class="form-group flex-2">
+            <select id="select-preset-trip">
+              <option value="">📏 กำหนดเส้นทางเอง (คำนวณตามระยะทาง กม.)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Unified Route Slots Box (No duplicate stop list below!) -->
+        <div class="route-builder-box">
+          <div id="route-slots-container" style="display:flex;flex-direction:column;gap:7px;"></div>
+
+          <div class="route-toolbar">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button id="btn-add-waypoint-slot" class="btn btn-primary btn-sm">+ เพิ่มจุดแวะสถานที่ต่างๆ</button>
+              <button id="btn-return-to-start" class="btn btn-outline btn-sm">🔄 ไป-กลับจุดรับเดิม</button>
+            </div>
+            <select id="select-quick-place-insert" style="max-width:230px;font-size:0.8rem;">
+              <option value="">📌 เลือกด่วนจากคลังสถานที่...</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Compact Route Metrics & Auto Province Summary -->
+        <div class="route-metrics">
+          <div class="metric-item">
+            <span class="metric-label">ระยะทางรวมจริง</span>
+            <strong id="metric-distance" class="metric-value">0.0 กม.</strong>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">เวลาขับรถบนถนน</span>
+            <strong id="metric-duration" class="metric-value">0 ชม. 0 นาที</strong>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">การวิเคราะห์เส้นทาง</span>
+            <span id="route-analyzer-content" style="font-size:0.76rem;color:#fde047;line-height:1.35;">-</span>
+          </div>
+        </div>
+
+        <!-- Map right in view -->
+        <div id="map" class="map-container"></div>
+      </section>
+
+      <!-- RIGHT COLUMN: CLEAN PRICING & FOLDABLE OPTIONS -->
+      <section class="card">
+        <div class="card-header">
+          <h2>💰 2. ราคาคำนวณอัตโนมัติ</h2>
+          <span id="metric-engine" class="badge badge-info">คำนวณตาม กม.</span>
+        </div>
+
+        <!-- 3 Big Vehicle Cards at the very top -->
+        <div id="vehicle-cards-container" class="vehicle-cards-grid"></div>
+
+        <!-- Grand Total Banner -->
+        <div class="total-banner">
+          <div>
+            <span class="total-caption">ราคารวมสุทธิ (<span id="summary-vehicle-name">-</span>)</span>
+            <div class="total-amount" id="summary-total-price">฿0</div>
+            <div class="total-breakdown" id="summary-breakdown-text">-</div>
+          </div>
+          <div>
+            <button id="btn-save-as-preset-trip" class="btn btn-primary">📌 บันทึกเรทนี้เข้าตารางทัวร์</button>
+          </div>
+        </div>
+
+        <!-- MAIN CONTROL 1: วิธีคิดราคา & ทิศทาง กม. -->
+        <div class="control-group-box">
+          <div class="control-group-header">
+            <span class="control-group-title">📏 วิธีคิดราคา & เรทกิโลเมตร</span>
+          </div>
+          <div class="form-row" style="margin-bottom:0;">
+            <div class="form-group">
+              <label>โหมดราคา</label>
+              <select id="select-pricing-mode">
+                <option value="km">📏 คิดตามระยะทาง (กม.)</option>
+                <option value="trip">📋 ราคาตารางทัวร์ + นอกพื้นที่</option>
+              </select>
+            </div>
+            <div class="form-group" id="group-km-direction">
+              <label>การคูณระยะทาง กม.</label>
+              <select id="select-km-direction">
+                <option value="oneway">ตามหมุดที่ปัก (เที่ยวเดียว)</option>
+                <option value="roundtrip">คูณ 2 ไป-กลับ (×2 กม.)</option>
+              </select>
+            </div>
+            <div class="form-group" id="group-km-tier">
+              <label>เรทบาท/กม. ที่ใช้</label>
+              <select id="select-km-rate-tier">
+                <option value="max">เรทสูงสุด (12 / 14 / 18 ฿)</option>
+                <option value="min">เรทต่ำสุด (11 / 13 / 16 ฿)</option>
+                <option value="mid">ค่ากลาง (11.5 / 13.5 / 17 ฿)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN CONTROL 2: แวะระหว่างทาง (แยกตามภาค & ประเภทรถ) -->
+        <div class="control-group-box">
+          <div class="control-group-header">
+            <span class="control-group-title">🍽️ แวะระหว่างทาง (กรอกจำนวนชั่วโมงเอง)</span>
+          </div>
+          <div class="form-row align-center" style="margin-bottom:0;">
+            <div class="form-group flex-2">
+              <div class="pill-group" id="stop-region-buttons">
+                <button type="button" class="pill-btn active" data-stopregion="central">ภาคกลาง (เก๋ง/SUV 250 • ตู้ 350฿)</button>
+                <button type="button" class="pill-btn" data-stopregion="north">ภาคเหนือ (300฿)</button>
+                <button type="button" class="pill-btn" data-stopregion="south">ภาคใต้ (กรอกเอง)</button>
+              </div>
+            </div>
+            <div class="form-group" style="max-width:130px;">
+              <label>ชั่วโมงที่แวะ (ชม.)</label>
+              <input type="number" id="extra-stop-hours" value="0" min="0" max="24" step="1" />
+            </div>
+            <div class="form-group hidden" id="south-stop-rate-group" style="max-width:140px;">
+              <label>เรทภาคใต้ (฿/ชม.)</label>
+              <input type="number" id="extra-south-stop-rate" value="0" min="0" step="50" placeholder="บาท/ชม." />
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN CONTROL 3: ทัวร์นอกพื้นที่ (+500 / +1,000 / +1,500฿) -->
+        <div class="control-group-box">
+          <div class="control-group-header">
+            <span class="control-group-title">🗺️ ทัวร์นอกพื้นที่</span>
+            <label style="display:inline-flex;align-items:center;gap:4px;font-size:0.74rem;cursor:pointer;color:#2563eb;">
+              <input type="checkbox" id="chk-auto-outarea" checked />
+              เลือกอัตโนมัติตามเส้นทาง
+            </label>
+          </div>
+          <div class="pill-group" id="outarea-pill-buttons">
+            <button type="button" class="pill-btn active" data-outarea="0">ในพื้นที่ปกติ (0฿)</button>
+            <button type="button" class="pill-btn" data-outarea="500">นอกพื้นที่ใกล้ๆ (+500฿)</button>
+            <button type="button" class="pill-btn" data-outarea="1000">เกิน 2 จังหวัด (+1,000฿)</button>
+            <button type="button" class="pill-btn" data-outarea="1500">ไกลมาก (+1,500฿)</button>
+          </div>
+        </div>
+
+        <!-- FOLDABLE DRAWER 1: ตัวเลือกเสริมอื่นๆ (พับเก็บไว้ไม่ให้รก) -->
+        <details class="clean-drawer">
+          <summary>
+            <span>➕ ตัวเลือกเสริมอื่นๆ (คาร์ซีท • ป้ายชื่อ • ทัวร์เกิน 10 ชม. • ค้างคืน • ส่วนลด)</span>
+            <span style="font-size:0.75rem;">คลิกเพื่อเปิด/ปิด ▾</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label>👶 คาร์ซีท (+300฿)</label>
+                <select id="extra-child-seat">
+                  <option value="0">ไม่รับ (0฿)</option>
+                  <option value="1">รับ 1 ตัว (+300฿)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>🪧 ป้ายชื่อ (+100฿)</label>
+                <select id="extra-name-sign">
+                  <option value="0">ไม่รับ (0฿)</option>
+                  <option value="100">รับป้ายชื่อ (+100฿)</option>
+                  <option value="free_hkt">ภูเก็ต (ฟรี 0฿)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>⏱️ ทัวร์เกิน 10 ชม. (+250฿/ชม.)</label>
+                <input type="number" id="extra-tour-ot-hours" value="0" min="0" max="12" step="1" />
+              </div>
+              <div class="form-group">
+                <label>🌙 คนขับค้างคืน (+500฿/คืน)</label>
+                <input type="number" id="extra-overnight-nights" value="0" min="0" max="15" step="1" />
+              </div>
+            </div>
+            <div class="form-row" style="margin-bottom:0;">
+              <div class="form-group">
+                <label>🌉 ฝั่งธนบุรี / เทศกาล</label>
+                <select id="extra-special-zone">
+                  <option value="0">ปกติ (0฿)</option>
+                  <option value="100">ฝั่งธนบุรี (+100฿)</option>
+                  <option value="200">ฝั่งธนบุรีไกล (+200฿)</option>
+                  <option value="200_holiday">เทศกาลปีใหม่ (+200฿)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>🏷️ ส่วนลด (฿)</label>
+                <input type="number" id="extra-discount" value="0" min="0" max="300" step="100" />
+              </div>
+              <div class="form-group flex-2">
+                <label>📋 ข้อความช่องคำขอพิเศษ</label>
+                <div class="input-with-btn">
+                  <input type="text" id="output-special-request" readonly placeholder="-" />
+                  <button id="btn-copy-special-req" class="btn btn-outline btn-sm">คัดลอก</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- FOLDABLE DRAWER 2: ตั้งค่าเรท กม. พื้นฐาน -->
+        <details class="clean-drawer">
+          <summary>
+            <span>⚙️ ตั้งค่าเรท กม. พื้นฐาน (เก๋ง 11–12฿ • SUV 13–14฿ • รถตู้ 16–18฿)</span>
+            <span style="font-size:0.75rem;">คลิกเพื่อแก้ไขเรท ▾</span>
+          </summary>
+          <div class="drawer-body">
+            <div id="vehicles-editor-list" class="vehicles-editor-list"></div>
+            <div style="margin-top:10px;text-align:right;">
+              <button id="btn-save-vehicles" class="btn btn-primary btn-sm">💾 บันทึกการตั้งค่าเรท</button>
+            </div>
+          </div>
+        </details>
+      </section>
+    </div>
+  </main>
+
+  <!-- TAB 2: TRIPS & PLACES DATABASE -->
+  <main id="tab-database" class="tab-panel">
+    <div class="db-grid">
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h2>🏖️ ตารางราคาแท็กซี่ & ทัวร์</h2>
+            <p class="sub-text">เพิ่มหรือแก้ไขเส้นทางและทัวร์ที่เปิดขายอยู่ (Sedan / SUV / Van)</p>
+          </div>
+        </div>
+
+        <div class="subform-box" style="margin-bottom:12px;">
+          <h3 id="trip-form-title" style="font-size:0.9rem;margin-bottom:8px;">➕ เพิ่มเส้นทาง / ทัวร์ใหม่</h3>
+          <input type="hidden" id="edit-trip-id" value="" />
+          <div class="form-row">
+            <div class="form-group">
+              <label>หมวด</label>
+              <select id="new-trip-zone"></select>
+            </div>
+            <div class="form-group flex-2">
+              <label>ชื่อเส้นทาง/ทัวร์ (ไทย)</label>
+              <input type="text" id="new-trip-nameth" placeholder="เช่น Airport(BKK) ↔ Pattaya" />
+            </div>
+            <div class="form-group flex-2">
+              <label>ชื่อเส้นทาง/ทัวร์ (อังกฤษ)</label>
+              <input type="text" id="new-trip-nameen" placeholder="เช่น Airport(BKK) → Pattaya" />
+            </div>
+          </div>
+          <div class="form-row" id="new-trip-vehicle-rates"></div>
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>จุดแวะบนแผนที่</label>
+              <div class="input-with-btn">
+                <input type="text" id="new-trip-stops-display" readonly placeholder="กดดึงหมุดและราคาที่คำนวณไว้จากหน้าหลัก" />
+                <button type="button" id="btn-use-current-stops" class="btn btn-outline btn-sm">📍 ดึงหมุด & ราคาที่คำนวณไว้</button>
+              </div>
+            </div>
+            <div class="form-group" style="max-width:110px;">
+              <label>จำนวนวัน</label>
+              <input type="number" id="new-trip-days" value="1" min="1" />
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button id="btn-save-trip-db" class="btn btn-primary btn-sm">💾 บันทึกเข้าตารางทัวร์</button>
+            <button id="btn-cancel-trip-edit" class="btn btn-outline btn-sm hidden">ยกเลิก</button>
+          </div>
+        </div>
+
+        <div id="db-trips-list" class="db-list"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <h2>📍 คลังพิกัดสถานที่ & สนามบิน</h2>
+            <p class="sub-text">เพิ่มสถานที่ที่ใช้บ่อยเพื่อกดวัดระยะทาง กม. ได้เร็วขึ้น</p>
+          </div>
+        </div>
+
+        <div class="subform-box" style="margin-bottom:12px;">
+          <h3 style="font-size:0.9rem;margin-bottom:8px;">➕ เพิ่มสถานที่ใหม่</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>หมวด</label>
+              <select id="new-place-zone"></select>
+            </div>
+            <div class="form-group">
+              <label>ชื่อไทย</label>
+              <input type="text" id="new-place-nameth" placeholder="เช่น ท่าเรือแหลมฉบัง" />
+            </div>
+            <div class="form-group">
+              <label>ชื่ออังกฤษ</label>
+              <input type="text" id="new-place-nameen" placeholder="เช่น Laem Chabang Pier" />
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:0;">
+            <div class="form-group flex-2">
+              <label>วางลิงก์ Google Maps หรือพิกัด Latitude, Longitude</label>
+              <div class="input-with-btn">
+                <input type="text" id="new-place-coords" placeholder="วางลิงก์ Google Maps หรือพิกัด เช่น 13.0822, 100.8837" />
+                <button id="btn-add-place-db" class="btn btn-primary btn-sm">+ บันทึก</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="db-places-list" class="db-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+// Smile Taxi Service — 100% Standalone Client-Side Calculator (ไม่ต้องรันผ่าน PowerShell!)
+const DEFAULT_SEED_DATA = {
+  settings: {
+    brandName: "Smile Taxi Service — CS Calculator",
+    currency: "THB"
+  },
+  vehicles: [
+    {
+      id: "sedan",
+      nameTh: "Sedan (รถเก๋ง)",
+      nameEn: "Sedan",
+      maxPax: 3,
+      maxBags: 2,
+      baseFare: 0,
+      ratePerKmMin: 11,
+      ratePerKmMax: 12,
+      ratePerKm: 12,
+      stopRateCentral: 250,
+      stopRateNorth: 300,
+      stopRateSouth: 0,
+      minCharge: 600,
+      dailyRate: 2500,
+      dailyIncludedKm: 150,
+      otRatePerHour: 250,
+      overnightRate: 500,
+      icon: "🚗"
+    },
+    {
+      id: "suv",
+      nameTh: "SUV (รถ SUV)",
+      nameEn: "SUV",
+      maxPax: 5,
+      maxBags: 4,
+      baseFare: 0,
+      ratePerKmMin: 13,
+      ratePerKmMax: 14,
+      ratePerKm: 14,
+      stopRateCentral: 250,
+      stopRateNorth: 300,
+      stopRateSouth: 0,
+      minCharge: 800,
+      dailyRate: 3000,
+      dailyIncludedKm: 150,
+      otRatePerHour: 250,
+      overnightRate: 500,
+      icon: "🚙"
+    },
+    {
+      id: "vip_van",
+      nameTh: "Van (รถตู้)",
+      nameEn: "Van",
+      maxPax: 7,
+      maxBags: 5,
+      baseFare: 0,
+      ratePerKmMin: 16,
+      ratePerKmMax: 18,
+      ratePerKm: 17,
+      stopRateCentral: 350,
+      stopRateNorth: 300,
+      stopRateSouth: 0,
+      minCharge: 1100,
+      dailyRate: 3500,
+      dailyIncludedKm: 180,
+      otRatePerHour: 250,
+      overnightRate: 500,
+      icon: "🚐"
+    }
+  ],
+  zones: [
+    { id: "bkk_airport", nameTh: "รับ-ส่ง สนามบินสุวรรณภูมิ (Airport BKK)", nameEn: "Suvarnabhumi Airport (BKK) Routes" },
+    { id: "dmk_bkk", nameTh: "รับ-ส่ง ดอนเมือง (DMK) & กรุงเทพฯ", nameEn: "Don Mueang (DMK) & Bangkok Routes" },
+    { id: "tours_manual", nameTh: "ทัวร์รายวัน (อยุธยา / กรุงเทพฯ / เขาใหญ่ / กาญจนบุรี)", nameEn: "Day Tours" },
+    { id: "south_north", nameTh: "ภาคใต้ & ภาคเหนือ (ภูเก็ต / เขาหลัก / กระบี่ / เชียงใหม่ / เชียงราย)", nameEn: "South & North Routes" }
+  ],
+  places: [
+    { id: "bkk_airport", zoneId: "bkk_airport", nameTh: "สนามบินสุวรรณภูมิ — Airport(BKK)", nameEn: "Suvarnabhumi Airport (BKK)", lat: 13.6900, lng: 100.7501 },
+    { id: "dmk_airport", zoneId: "dmk_bkk", nameTh: "สนามบินดอนเมือง — Airport(DMK)", nameEn: "Don Mueang Airport (DMK)", lat: 13.9126, lng: 100.6068 },
+    { id: "bkk_city", zoneId: "dmk_bkk", nameTh: "กรุงเทพฯ (สุขุมวิท / สีลม / สาทร / ข้าวสาร)", nameEn: "Bangkok (Hotel in Bangkok)", lat: 13.7462, lng: 100.5347 },
+    { id: "bkk_grand_palace", zoneId: "tours_manual", nameTh: "วัดพระแก้ว & วัดอรุณ (Grand Palace & Wat Arun)", nameEn: "Grand Palace and Wat Arun", lat: 13.7500, lng: 100.4913 },
+    { id: "ayutthaya", zoneId: "bkk_airport", nameTh: "อยุธยา (Ayutthaya)", nameEn: "Ayutthaya", lat: 14.3568, lng: 100.5675 },
+    { id: "pattaya", zoneId: "bkk_airport", nameTh: "พัทยา (Pattaya / Jomtien / Naklua)", nameEn: "Pattaya", lat: 12.9344, lng: 100.8832 },
+    { id: "utapao_airport", zoneId: "bkk_airport", nameTh: "สนามบินอู่ตะเภา — U-Tapao Airport (UTP)", nameEn: "U-Tapao Airport (UTP)", lat: 12.6799, lng: 101.0050 },
+    { id: "laem_chabang", zoneId: "bkk_airport", nameTh: "ท่าเรือสำราญแหลมฉบัง (Laem Chabang Cruise Terminal)", nameEn: "Laem Chabang Cruise Terminal", lat: 13.0822, lng: 100.8837 },
+    { id: "banphe_pier", zoneId: "bkk_airport", nameTh: "ท่าเรือบ้านเพ ระยอง (BanPhe Pier - Koh Samet)", nameEn: "BanPhe Pier", lat: 12.6272, lng: 101.4418 },
+    { id: "koh_chang", zoneId: "bkk_airport", nameTh: "เกาะช้าง ตราด (Koh Chang)", nameEn: "Koh Chang", lat: 12.0626, lng: 102.3060 },
+    { id: "huahin", zoneId: "bkk_airport", nameTh: "หัวหิน / เขาตะเกียบ (Hua Hin)", nameEn: "Hua Hin", lat: 12.5706, lng: 99.9576 },
+    { id: "kanchanaburi", zoneId: "bkk_airport", nameTh: "กาญจนบุรี / แม่น้ำแคว (Kanchanaburi City)", nameEn: "Kanchanaburi (City)", lat: 14.0409, lng: 99.5037 },
+    { id: "khaoyai", zoneId: "bkk_airport", nameTh: "เขาใหญ่ (Khao Yai / National Park)", nameEn: "Khao Yai", lat: 14.4392, lng: 101.3724 },
+    { id: "chiangmai", zoneId: "south_north", nameTh: "เชียงใหม่ (Chiang Mai)", nameEn: "Chiang Mai", lat: 18.7883, lng: 98.9853 },
+    { id: "chiangrai", zoneId: "south_north", nameTh: "เชียงราย (Chiang Rai)", nameEn: "Chiang Rai", lat: 19.9105, lng: 99.8406 },
+    { id: "phuket_airport", zoneId: "south_north", nameTh: "สนามบินภูเก็ต — Phuket(Airport)", nameEn: "Phuket (Airport)", lat: 8.1111, lng: 98.3065 },
+    { id: "phuket_beach", zoneId: "south_north", nameTh: "หาดป่าตอง / กะตะ ภูเก็ต (Patong / Kata Beach)", nameEn: "Patong / Kata Beach, Phuket", lat: 7.8965, lng: 98.2965 },
+    { id: "khaolak", zoneId: "south_north", nameTh: "เขาหลัก พังงา (Khao Lak)", nameEn: "Khao Lak", lat: 8.6650, lng: 98.2485 },
+    { id: "krabi", zoneId: "south_north", nameTh: "กระบี่ / อ่าวนาง (Krabi / Ao Nang)", nameEn: "Krabi", lat: 8.0320, lng: 98.8224 },
+    { id: "hatyai", zoneId: "south_north", nameTh: "หาดใหญ่ (Hat Yai)", nameEn: "Hat Yai", lat: 7.0086, lng: 100.4747 }
+  ],
+  trips: [
+    { id: "st_bkk_bangkok", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ Bangkok (สุวรรณภูมิ ↔ กรุงเทพฯ)", nameEn: "Airport(BKK) → Bangkok", days: 1, stopIds: ["bkk_airport", "bkk_city"], rates: { sedan: 600, suv: 800, vip_van: 1100 } },
+    { id: "st_bkk_pattaya", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ Pattaya (สุวรรณภูมิ ↔ พัทยา)", nameEn: "Airport(BKK) → Pattaya", days: 1, stopIds: ["bkk_airport", "pattaya"], rates: { sedan: 1200, suv: 1500, vip_van: 1800 } },
+    { id: "st_bkk_ayutthaya", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ Ayutthaya (สุวรรณภูมิ ↔ อยุธยา)", nameEn: "Airport(BKK) → Ayutthaya", days: 1, stopIds: ["bkk_airport", "ayutthaya"], rates: { sedan: 1200, suv: 1500, vip_van: 2000 } },
+    { id: "st_bkk_banphe", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ BanPhe Pier (สุวรรณภูมิ ↔ ท่าเรือบ้านเพ เสม็ด)", nameEn: "Airport(BKK) → BanPhe Pier", days: 1, stopIds: ["bkk_airport", "banphe_pier"], rates: { sedan: 1800, suv: 2100, vip_van: 2600 } },
+    { id: "st_bkk_huahin", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ Hua Hin (สุวรรณภูมิ ↔ หัวหิน)", nameEn: "Airport(BKK) → Hua Hin", days: 1, stopIds: ["bkk_airport", "huahin"], rates: { sedan: 2000, suv: 2200, vip_van: 2800 } },
+    { id: "st_bkk_kanchanaburi", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ Kanchanaburi (City) (สุวรรณภูมิ ↔ กาญจนบุรี)", nameEn: "Airport(BKK) → Kanchanaburi(City)", days: 1, stopIds: ["bkk_airport", "kanchanaburi"], rates: { sedan: 2000, suv: 2300, vip_van: 2800 } },
+    { id: "st_bkk_khaoyai", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ Khao Yai (สุวรรณภูมิ ↔ เขาใหญ่)", nameEn: "Airport(BKK) → Khao Yai", days: 1, stopIds: ["bkk_airport", "khaoyai"], rates: { sedan: 2000, suv: 2300, vip_van: 2800 } },
+    { id: "st_bkk_kohchang", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ Koh Chang (สุวรรณภูมิ ↔ เกาะช้าง)", nameEn: "Airport(BKK) → Koh Chang", days: 1, stopIds: ["bkk_airport", "koh_chang"], rates: { sedan: 3700, suv: 4000, vip_van: 4600 } },
+    { id: "st_bkk_chiangmai", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ Chiang Mai (สุวรรณภูมิ ↔ เชียงใหม่)", nameEn: "Airport(BKK) → Chiang Mai", days: 1, stopIds: ["bkk_airport", "chiangmai"], rates: { sedan: 7500, suv: 8500, vip_van: 10000 } },
+    { id: "st_bkk_phuket", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ Phuket(Airport) (สุวรรณภูมิ ↔ ภูเก็ต)", nameEn: "Airport(BKK) → Phuket(Airport)", days: 1, stopIds: ["bkk_airport", "phuket_airport"], rates: { sedan: 10500, suv: 12500, vip_van: 15000 } },
+    { id: "st_bkk_hatyai", zoneId: "bkk_airport", type: "taxi", nameTh: "Airport(BKK) ↔ Hat Yai (สุวรรณภูมิ ↔ หาดใหญ่)", nameEn: "Airport(BKK) → Hat Yai", days: 1, stopIds: ["bkk_airport", "hatyai"], rates: { sedan: 14000, suv: 16000, vip_van: 18000 } },
+    { id: "st_dmk_bangkok", zoneId: "dmk_bkk", type: "taxi", nameTh: "Don Mueang Airport (DMK) ↔ Bangkok (ดอนเมือง ↔ กรุงเทพฯ)", nameEn: "Airport(DMK) → Bangkok", days: 1, stopIds: ["dmk_airport", "bkk_city"], rates: { sedan: 600, suv: 800, vip_van: 900 } },
+    { id: "st_city_pattaya", zoneId: "dmk_bkk", type: "taxi", nameTh: "Bangkok (Sukhumvit/Silom) ↔ Pattaya (กรุงเทพฯ ↔ พัทยา)", nameEn: "Bangkok → Pattaya", days: 1, stopIds: ["bkk_city", "pattaya"], rates: { sedan: 1300, suv: 1500, vip_van: 1800 } },
+    { id: "st_city_huahin", zoneId: "dmk_bkk", type: "taxi", nameTh: "Bangkok (Sathorn/Silom) ↔ Hua Hin (กรุงเทพฯ ↔ หัวหิน)", nameEn: "Bangkok → Hua Hin", days: 1, stopIds: ["bkk_city", "huahin"], rates: { sedan: 2000, suv: 2200, vip_van: 2800 } },
+    { id: "st_pattaya_utp", zoneId: "dmk_bkk", type: "taxi", nameTh: "Pattaya (Jomtien) ↔ U-Tapao Airport (UTP)", nameEn: "Pattaya → U-Tapao Airport (UTP)", days: 1, stopIds: ["pattaya", "utapao_airport"], rates: { sedan: 800, suv: 1000, vip_van: 1300 } },
+    { id: "st_hkt_kata_patong", zoneId: "south_north", type: "taxi", nameTh: "Phuket Airport ↔ Kata / Patong Beach (สนามบินภูเก็ต ↔ กะตะ/ป่าตอง)", nameEn: "Phuket Airport → Kata / Patong Beach", days: 1, stopIds: ["phuket_airport", "phuket_beach"], rates: { sedan: 800, suv: 1000, vip_van: 1200 }, isSouthRoute: true },
+    { id: "tour_ayutthaya", zoneId: "tours_manual", type: "tour", nameTh: "ทัวร์อยุธยา (Bangkok → Ayutthaya Day Tour)", nameEn: "Bangkok → Ayutthaya Day Tour", days: 1, stopIds: ["bkk_city", "ayutthaya", "bkk_city"], rates: { sedan: 1500, suv: 2000, vip_van: 2500 } },
+    { id: "tour_bkk_temples", zoneId: "tours_manual", type: "tour", nameTh: "ทัวร์กรุงเทพฯ วัดพระแก้ว & วัดอรุณ (Bangkok → Grand Palace & Wat Arun)", nameEn: "Bangkok → Grand Palace and Wat Arun Tour", days: 1, stopIds: ["bkk_city", "bkk_grand_palace", "bkk_city"], rates: { sedan: 2500, suv: 3000, vip_van: 3500 } },
+    { id: "tour_khaoyai", zoneId: "tours_manual", type: "tour", nameTh: "ทัวร์เขาใหญ่ (Khao Yai → Khao Yai National Park Tour)", nameEn: "Khao Yai → Khao Yai National Park Tour", days: 1, stopIds: ["bkk_city", "khaoyai", "bkk_city"], rates: { sedan: 3500, suv: 4000, vip_van: 4500 } },
+    { id: "tour_kanchanaburi", zoneId: "tours_manual", type: "tour", nameTh: "ทัวร์กาญจนบุรี แม่น้ำแคว (Bangkok → River Kwai Kanchanaburi)", nameEn: "Bangkok → River Kwai, Kanchanaburi", days: 1, stopIds: ["bkk_airport", "kanchanaburi"], rates: { sedan: 2000, suv: 2300, vip_van: 2800 } }
+  ]
+};
+
+const STORAGE_KEY = "SMILE_TAXI_CS_DB_V3";
+let DB = null;
+let map = null;
+let routeLayer = null;
+let markersLayer = null;
+
+const THAI_PROVINCE_CENTERS = [
+  { name: "กรุงเทพฯ", lat: 13.7563, lng: 100.5018 },
+  { name: "สมุทรปราการ", lat: 13.6900, lng: 100.7501 },
+  { name: "นนทบุรี", lat: 13.8591, lng: 100.5217 },
+  { name: "ปทุมธานี", lat: 14.0208, lng: 100.5250 },
+  { name: "อยุธยา", lat: 14.3532, lng: 100.5684 },
+  { name: "ชลบุรี", lat: 13.0280, lng: 100.9150 },
+  { name: "ระยอง", lat: 12.6814, lng: 101.2816 },
+  { name: "ตราด", lat: 12.1400, lng: 102.3100 },
+  { name: "เพชรบุรี", lat: 12.9000, lng: 99.9500 },
+  { name: "ประจวบฯ (หัวหิน)", lat: 12.5684, lng: 99.9577 },
+  { name: "สมุทรสงคราม", lat: 13.4130, lng: 99.9800 },
+  { name: "ราชบุรี", lat: 13.5200, lng: 99.9500 },
+  { name: "นครปฐม", lat: 13.8199, lng: 100.0622 },
+  { name: "กาญจนบุรี", lat: 14.0228, lng: 99.5328 },
+  { name: "นครราชสีมา (เขาใหญ่)", lat: 14.5500, lng: 101.4000 },
+  { name: "เชียงใหม่", lat: 18.7883, lng: 98.9853 },
+  { name: "เชียงราย", lat: 19.9105, lng: 99.8406 },
+  { name: "แม่ฮ่องสอน", lat: 19.3582, lng: 98.4405 },
+  { name: "ภูเก็ต", lat: 7.9519, lng: 98.3381 },
+  { name: "พังงา", lat: 8.5500, lng: 98.3000 },
+  { name: "กระบี่", lat: 8.0500, lng: 98.9000 },
+  { name: "สงขลา", lat: 7.0086, lng: 100.4747 }
+];
+
+const state = {
+  selectedZone: "all",
+  selectedTripId: "",
+  tripTitle: "Custom Route",
+  stops: [],
+  legMetrics: [],
+  totalDistanceKm: 0,
+  totalDurationMin: 0,
+  pricingMode: "km",
+  selectedVehicleId: "sedan",
+  kmDirection: "oneway",
+  kmRateTier: "max",
+  autoDetectOutArea: true,
+  extras: {
+    tourOutArea: 0,
+    childSeat: 0,
+    nameSign: "0",
+    stopRegion: "central",
+    stopHours: 0,
+    southStopRate: 0,
+    tourOtHours: 0,
+    overnightNights: 0,
+    specialZone: "0",
+    discount: 0
+  },
+  tempTripStopIds: []
+};
+
+function showToast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.remove("hidden");
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => el.classList.add("hidden"), 3000);
+}
+
+function formatNumber(num) {
+  return Math.round(Number(num || 0)).toLocaleString("en-US");
+}
+
+function formatDurationTh(mins) {
+  const m = Math.round(Number(mins || 0));
+  const hrs = Math.floor(m / 60);
+  const rem = m % 60;
+  if (hrs <= 0) return `${rem} นาที`;
+  return `${hrs} ชม. ${rem} นาที`;
+}
+
+function calcHaversineRoadKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c * 1.28;
+}
+
+function detectProvinceName(lat, lng) {
+  let best = "";
+  let minDist = Infinity;
+  THAI_PROVINCE_CENTERS.forEach((p) => {
+    const d = calcHaversineRoadKm(lat, lng, p.lat, p.lng);
+    if (d < minDist) {
+      minDist = d;
+      best = p.name;
+    }
+  });
+  return best;
+}
+
+function normalizeProvinceGroup(provName) {
+  if (
+    provName.includes("กรุงเทพฯ") ||
+    provName.includes("สมุทรปราการ") ||
+    provName.includes("นนทบุรี") ||
+    provName.includes("ปทุมธานี")
+  ) {
+    return "กรุงเทพฯ-ปริมณฑล";
+  }
+  return provName;
+}
+
+// -------------------- 100% STANDALONE DATABASE (LOCALSTORAGE) --------------------
+async function fetchDatabase() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      DB = JSON.parse(raw);
+      return;
+    }
+  } catch (e) {}
+  DB = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+  } catch (e) {}
+}
+
+async function saveDatabase(partial = {}) {
+  DB = { ...DB, ...partial };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+  } catch (e) {}
+}
+
+// -------------------- CLIENT-SIDE GOOGLE MAPS & PLACE RESOLVER (NO SERVER REQUIRED!) --------------------
+function extractCoordsClient(str = "") {
+  const s = String(str).trim();
+  const m3d = s.match(/!3d(-?\d{1,2}\.\d+)!4d(-?\d{2,3}\.\d+)/);
+  if (m3d) {
+    return { lat: parseFloat(m3d[1]), lng: parseFloat(m3d[2]) };
+  }
+  const mAt = s.match(/(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{2,3}\.\d{3,})/);
+  if (mAt) {
+    const lat = parseFloat(mAt[1]);
+    const lng = parseFloat(mAt[2]);
+    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      return { lat, lng };
+    }
+  }
+  return null;
+}
+
+function extractPlaceNameFromUrlClient(urlStr = "") {
+  try {
+    const decoded = decodeURIComponent(urlStr);
+    const placeMatch = decoded.match(/\/maps\/(?:place|search)\/([^/@?]+)/i);
+    if (placeMatch && placeMatch[1]) {
+      return placeMatch[1].replace(/\+/g, " ").trim();
+    }
+    const qMatch = decoded.match(/[?&]q=([^&]+)/i);
+    if (qMatch && qMatch[1] && !/^(-?\d+\.\d+),(-?\d+\.\d+)$/.test(qMatch[1])) {
+      return qMatch[1].replace(/\+/g, " ").trim();
+    }
+  } catch (e) {}
+  return "";
+}
+
+function extractDirStopsFromUrlClient(urlStr = "") {
+  try {
+    const decoded = decodeURIComponent(urlStr);
+    const dirMatch = decoded.match(/\/maps\/dir\/([^?]+)/i);
+    if (!dirMatch || !dirMatch[1]) return null;
+    const rawParts = dirMatch[1]
+      .split("/")
+      .map((p) => p.replace(/\+/g, " ").trim())
+      .filter((p) => p && !p.startsWith("@") && !p.startsWith("data=") && p !== "dir");
+    if (rawParts.length >= 2) return rawParts;
+  } catch (e) {}
+  return null;
+}
+
+async function geocodeSingleClient(queryText) {
+  const q = String(queryText || "").trim();
+  if (!q) return null;
+
+  // 1. พิกัดในข้อความหรือในลิงก์ Google Maps
+  const coords = extractCoordsClient(q);
+  if (coords) {
+    const nameFromUrl = extractPlaceNameFromUrlClient(q);
+    const label = nameFromUrl || `พิกัด (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`;
+    return { nameTh: label, nameEn: label, lat: coords.lat, lng: coords.lng };
+  }
+
+  // 2. ค้นหาในคลังสถานที่ของเว็บก่อน
+  const searchName = extractPlaceNameFromUrlClient(q) || q;
+  const lower = searchName.toLowerCase();
+  const foundLocal = (DB.places || []).find(
+    (p) =>
+      p.nameTh.toLowerCase().includes(lower) ||
+      p.nameEn.toLowerCase().includes(lower) ||
+      lower.includes(p.nameEn.toLowerCase())
+  );
+  if (foundLocal) {
+    return {
+      nameTh: foundLocal.nameTh,
+      nameEn: foundLocal.nameEn,
+      lat: foundLocal.lat,
+      lng: foundLocal.lng
+    };
+  }
+
+  // 3. ค้นหาผ่าน Photon API (รองรับ file:// และ CORS ได้ดี) + Fallback ไป Nominatim
+  try {
+    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(searchName + " Thailand")}&limit=1`;
+    const pResp = await fetch(photonUrl);
+    const pData = await pResp.json();
+    if (pData && pData.features && pData.features.length > 0) {
+      const feat = pData.features[0];
+      const [lon, lat] = feat.geometry.coordinates;
+      const props = feat.properties || {};
+      const label = [props.name, props.city || props.state].filter(Boolean).join(", ") || searchName;
+      return {
+        nameTh: searchName.length <= 45 ? searchName : label,
+        nameEn: label,
+        lat: parseFloat(lat),
+        lng: parseFloat(lon)
+      };
+    }
+  } catch (e) {}
+
+  try {
+    const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&countrycodes=th&limit=1&q=${encodeURIComponent(searchName)}`;
+    const resp = await fetch(osmUrl, { headers: { "Accept-Language": "th,en" } });
+    const items = await resp.json();
+    if (items && items.length > 0) {
+      const first = items[0];
+      const shortName = first.display_name.split(",").slice(0, 2).join(", ").trim();
+      return {
+        nameTh: searchName.length <= 45 ? searchName : shortName,
+        nameEn: shortName,
+        lat: parseFloat(first.lat),
+        lng: parseFloat(first.lon)
+      };
+    }
+  } catch (e) {}
+  return null;
+}
+
+async function resolvePlaceOrGoogleMap(queryText) {
+  const q = String(queryText || "").trim();
+  if (!q) return null;
+
+  // ถ้าเป็นลิงก์เส้นทางหลายหมุด (/maps/dir/A/B/C)
+  const dirStops = extractDirStopsFromUrlClient(q);
+  if (dirStops && dirStops.length >= 2) {
+    const list = [];
+    for (const part of dirStops) {
+      const r = await geocodeSingleClient(part);
+      if (r) list.push(r);
+    }
+    if (list.length > 0) return list;
+  }
+
+  // ลองแกะในเบราว์เซอร์โดยตรงก่อน
+  const single = await geocodeSingleClient(q);
+  if (single) return [single];
+
+  // กรณีเป็นลิงก์สั้น maps.app.goo.gl และรันผ่านเซิร์ฟเวอร์อยู่ ให้ลองเรียก /api/resolve-place
+  if (window.location.protocol.startsWith("http")) {
+    try {
+      const res = await fetch("/api/resolve-place", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q })
+      });
+      const json = await res.json();
+      if (json.ok && json.stops && json.stops.length > 0) return json.stops;
+    } catch (e) {}
+  }
+
+  throw new Error(`ไม่พบพิกัดของ "${q}" (หากเป็นลิงก์สั้นจากมือถือ ให้เปิดลิงก์แล้วก๊อปปี้ชื่อสถานที่หรือลิงก์เต็มมาวางได้เลยค่ะ)`);
+}
+
+// -------------------- UNIFIED ROUTE SLOTS --------------------
+function ensureMinimumTwoSlots() {
+  while (state.stops.length < 2) {
+    const isFirst = state.stops.length === 0;
+    state.stops.push({
+      id: "slot_" + Date.now() + "_" + state.stops.length,
+      nameTh: isFirst ? "สนามบินสุวรรณภูมิ — Airport(BKK)" : "พัทยา (Pattaya)",
+      nameEn: isFirst ? "Suvarnabhumi Airport (BKK)" : "Pattaya",
+      lat: isFirst ? 13.6900 : 12.9344,
+      lng: isFirst ? 100.7501 : 100.8832
+    });
+  }
+}
+
+function renderRouteSlotsUI() {
+  const container = document.getElementById("route-slots-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  state.stops.forEach((st, idx) => {
+    const isPickup = idx === 0;
+    const isDropoff = idx === state.stops.length - 1 && state.stops.length > 1;
+    let roleLabel = `🟡 แวะ #${idx}`;
+    let badgeBg = "#d97706";
+    let placeholderText = "วางลิงก์ Google Maps หรือพิมพ์ชื่อจุดแวะ...";
+
+    if (isPickup) {
+      roleLabel = "🟢 จุดรับ";
+      badgeBg = "#16a34a";
+      placeholderText = "วางลิงก์ Google Maps หรือพิมพ์ชื่อจุดรับ / สนามบิน / โรงแรม...";
+    } else if (isDropoff) {
+      roleLabel = "🔴 จุดส่ง";
+      badgeBg = "#dc2626";
+      placeholderText = "วางลิงก์ Google Maps หรือพิมพ์ชื่อจุดส่งปลายทาง...";
+    }
+
+    const row = document.createElement("div");
+    row.className = "slot-row";
+
+    const hasValidCoords = typeof st.lat === "number" && typeof st.lng === "number" && !isNaN(st.lat);
+    const prov = hasValidCoords && st.nameTh ? detectProvinceName(st.lat, st.lng) : "";
+    const leg = idx > 0 && state.legMetrics[idx - 1] ? state.legMetrics[idx - 1] : null;
+
+    let metaTagHtml = "";
+    if (leg && st.nameTh) {
+      metaTagHtml = `<span class="slot-meta-tag" title="${prov}">+${leg.distanceKm} กม. (${prov})</span>`;
+    } else if (prov) {
+      metaTagHtml = `<span class="slot-meta-tag">${prov}</span>`;
+    }
+
+    row.innerHTML = `
+      <span class="slot-role-badge" style="background:${badgeBg};">
+        ${idx + 1}. ${roleLabel}
+      </span>
+      <input
+        type="text"
+        class="slot-place-input"
+        data-slotidx="${idx}"
+        value="${(st.nameTh || "").replace(/"/g, "&quot;")}"
+        placeholder="${placeholderText}"
+      />
+      ${metaTagHtml}
+      <button type="button" class="btn btn-outline btn-xs" data-moveup="${idx}" ${idx === 0 ? "disabled" : ""} title="เลื่อนขึ้น">↑</button>
+      <button type="button" class="btn btn-outline btn-xs" data-movedown="${idx}" ${idx === state.stops.length - 1 ? "disabled" : ""} title="เลื่อนลง">↓</button>
+      ${
+        state.stops.length > 2
+          ? `<button type="button" class="btn btn-danger btn-xs" data-removeslot="${idx}" title="ลบจุดนี้">✕</button>`
+          : ""
+      }
+    `;
+    container.appendChild(row);
+  });
+
+  container.querySelectorAll(".slot-place-input").forEach((inp) => {
+    const idx = Number(inp.dataset.slotidx);
+
+    const triggerResolve = async (rawVal) => {
+      const val = String(rawVal || "").trim();
+      if (!val) return;
+      if (state.stops[idx] && val === state.stops[idx].nameTh && typeof state.stops[idx].lat === "number") {
+        return;
+      }
+      showToast(`⏳ กำลังค้นหาพิกัด "${val.slice(0, 30)}"...`);
+      try {
+        const resolvedStops = await resolvePlaceOrGoogleMap(val);
+        if (resolvedStops.length > 1) {
+          state.stops = resolvedStops.map((s, i) => ({
+            id: "dir_" + Date.now() + "_" + i,
+            nameTh: s.nameTh,
+            nameEn: s.nameEn,
+            lat: s.lat,
+            lng: s.lng
+          }));
+          showToast(`✅ ดึงเส้นทาง ${resolvedStops.length} จุดจาก Google Maps แล้ว!`);
+        } else {
+          const s = resolvedStops[0];
+          state.stops[idx] = {
+            id: "slot_" + Date.now() + "_" + idx,
+            nameTh: s.nameTh,
+            nameEn: s.nameEn,
+            lat: s.lat,
+            lng: s.lng
+          };
+          showToast(`✅ คำนวณระยะทาง "${s.nameTh}" เรียบร้อย!`);
+        }
+        state.tripTitle = state.stops.map((s) => s.nameEn || s.nameTh).join(" → ");
+        await updateRouteAndRecalculate();
+      } catch (err) {
+        showToast(`⚠️ ${err.message}`);
+      }
+    };
+
+    inp.addEventListener("paste", () => {
+      setTimeout(() => {
+        triggerResolve(inp.value);
+      }, 120);
+    });
+
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        triggerResolve(inp.value);
+      }
+    });
+
+    inp.addEventListener("change", () => {
+      triggerResolve(inp.value);
+    });
+  });
+
+  container.querySelectorAll("[data-moveup]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const i = Number(btn.dataset.moveup);
+      if (i > 0) {
+        const tmp = state.stops[i - 1];
+        state.stops[i - 1] = state.stops[i];
+        state.stops[i] = tmp;
+        updateRouteAndRecalculate();
+      }
+    });
+  });
+
+  container.querySelectorAll("[data-movedown]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const i = Number(btn.dataset.movedown);
+      if (i < state.stops.length - 1) {
+        const tmp = state.stops[i + 1];
+        state.stops[i + 1] = state.stops[i];
+        state.stops[i] = tmp;
+        updateRouteAndRecalculate();
+      }
+    });
+  });
+
+  container.querySelectorAll("[data-removeslot]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.dataset.removeslot);
+      if (state.stops.length <= 2) return;
+      state.stops.splice(idx, 1);
+      updateRouteAndRecalculate();
+    });
+  });
+}
+
+function addWaypointSlot() {
+  ensureMinimumTwoSlots();
+  const insertPos = Math.max(1, state.stops.length - 1);
+  const prev = state.stops[insertPos - 1] || { lat: 13.7462, lng: 100.5347 };
+  state.stops.splice(insertPos, 0, {
+    id: "waypoint_" + Date.now(),
+    nameTh: "",
+    nameEn: "Waypoint Stop",
+    lat: prev.lat,
+    lng: prev.lng
+  });
+  renderRouteSlotsUI();
+  showToast("➕ เพิ่มช่องจุดแวะแล้ว วางลิงก์ Google Maps หรือชื่อสถานที่ได้เลยค่ะ");
+}
+
+// -------------------- AUTO OUT-OF-AREA & MULTI-STOP ANALYZER --------------------
+function updateOutAreaPillButtonsUI() {
+  document.querySelectorAll("#outarea-pill-buttons [data-outarea]").forEach((btn) => {
+    btn.classList.toggle("active", Number(btn.dataset.outarea) === Number(state.extras.tourOutArea || 0));
+  });
+}
+
+function analyzeRouteProvincesAndOutArea() {
+  const validStops = state.stops.filter(
+    (s) => typeof s.lat === "number" && typeof s.lng === "number" && !isNaN(s.lat) && s.nameTh
+  );
+  const boxEl = document.getElementById("route-analyzer-content");
+  if (!boxEl) return;
+
+  if (validStops.length < 2) {
+    boxEl.textContent = "วางจุดรับและจุดส่งเพื่อคำนวณ";
+    return;
+  }
+
+  const provincesList = validStops.map((s) => detectProvinceName(s.lat, s.lng));
+  const uniqueGroups = [...new Set(provincesList.map((p) => normalizeProvinceGroup(p)))];
+  const waypointCount = Math.max(0, validStops.length - 2);
+  const distKm = state.totalDistanceKm;
+  const driveHours = state.totalDurationMin / 60;
+  const estTotalTripHours = driveHours + waypointCount * 1.2 + Number(state.extras.stopHours || 0);
+
+  let maxSpreadKm = 0;
+  for (let i = 0; i < validStops.length; i++) {
+    for (let j = i + 1; j < validStops.length; j++) {
+      const d = calcHaversineRoadKm(
+        validStops[i].lat,
+        validStops[i].lng,
+        validStops[j].lat,
+        validStops[j].lng
+      );
+      if (d > maxSpreadKm) maxSpreadKm = d;
+    }
+  }
+
+  let recommendedOutArea = 0;
+  let outAreaShort = "ในพื้นที่ปกติ (0฿)";
+
+  if (maxSpreadKm >= 115 || distKm >= 210) {
+    recommendedOutArea = 1500;
+    outAreaShort = "ไกลมาก (+1,500฿)";
+  } else if (uniqueGroups.length >= 3 || distKm >= 135) {
+    recommendedOutArea = 1000;
+    outAreaShort = "เกิน 2 จังหวัด (+1,000฿)";
+  } else if (uniqueGroups.length === 2 || distKm >= 65) {
+    recommendedOutArea = 500;
+    outAreaShort = "นอกพื้นที่ใกล้ๆ (+500฿)";
+  }
+
+  if (state.autoDetectOutArea) {
+    state.extras.tourOutArea = recommendedOutArea;
+    updateOutAreaPillButtonsUI();
+  }
+
+  const warnOver10h = estTotalTripHours > 10 ? ` • ⚠️ รวมแวะอาจเกิน 10 ชม.` : "";
+  boxEl.textContent = `${uniqueGroups.join(" → ")} • ${outAreaShort}${warnOver10h}`;
+}
+
+// -------------------- MAP & OSRM DISTANCE --------------------
+function initMap() {
+  map = L.map("map").setView([13.69, 100.75], 9);
+
+  // ใช้ CARTO Voyager และ Esri Street Map ซึ่งอนุญาตให้เปิดจากไฟล์ในเครื่อง (file://) โดยไม่ติด 403 Access Blocked
+  const cartoLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+    maxZoom: 19,
+    subdomains: "abcd",
+    attribution: "© OpenStreetMap © CARTO"
+  });
+
+  const esriLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+    maxZoom: 19,
+    attribution: "© Esri"
+  });
+
+  cartoLayer.addTo(map);
+  L.control.layers({
+    "แผนที่ถนน (CARTO)": cartoLayer,
+    "แผนที่ละเอียด (Esri)": esriLayer
+  }, null, { position: "topright" }).addTo(map);
+
+  routeLayer = L.layerGroup().addTo(map);
+  markersLayer = L.layerGroup().addTo(map);
+
+  map.on("click", (e) => {
+    const lat = Number(e.latlng.lat.toFixed(5));
+    const lng = Number(e.latlng.lng.toFixed(5));
+    const idx = state.stops.length + 1;
+    state.stops.push({
+      id: "custom_" + Date.now(),
+      nameTh: `หมุดแผนที่ #${idx} (${lat}, ${lng})`,
+      nameEn: `Pin #${idx} (${lat}, ${lng})`,
+      lat,
+      lng
+    });
+    showToast(`📍 เพิ่มหมุดบนแผนที่แล้ว`);
+    updateRouteAndRecalculate();
+  });
+}
+
+async function updateRouteAndRecalculate() {
+  markersLayer.clearLayers();
+  routeLayer.clearLayers();
+
+  const validStops = state.stops.filter(
+    (s) => typeof s.lat === "number" && typeof s.lng === "number" && !isNaN(s.lat)
+  );
+
+  if (validStops.length === 0) {
+    state.totalDistanceKm = 0;
+    state.totalDurationMin = 0;
+    state.legMetrics = [];
+    renderRouteSlotsUI();
+    analyzeRouteProvincesAndOutArea();
+    updateMetricsUI();
+    renderPricingAndChat();
+    return;
+  }
+
+  const bounds = [];
+  validStops.forEach((st, idx) => {
+    let badgeClass = "";
+    if (idx === 0) badgeClass = "start";
+    else if (idx === validStops.length - 1 && validStops.length > 1) badgeClass = "end";
+
+    const icon = L.divIcon({
+      className: "custom-map-marker",
+      html: `<div class="stop-badge ${badgeClass}" style="border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);width:28px;height:28px;">${idx + 1}</div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+
+    L.marker([st.lat, st.lng], { icon })
+      .bindPopup(`<strong>#${idx + 1} ${st.nameTh || st.nameEn}</strong>`)
+      .addTo(markersLayer);
+
+    bounds.push([st.lat, st.lng]);
+  });
+
+  if (validStops.length === 1) {
+    map.setView([validStops[0].lat, validStops[0].lng], 12);
+    state.totalDistanceKm = 0;
+    state.totalDurationMin = 0;
+    state.legMetrics = [];
+    renderRouteSlotsUI();
+    analyzeRouteProvincesAndOutArea();
+    updateMetricsUI();
+    renderPricingAndChat();
+    return;
+  }
+
+  const coordsQuery = validStops.map((s) => `${s.lng},${s.lat}`).join(";");
+  const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordsQuery}?overview=full&geometries=geojson&steps=false`;
+
+  try {
+    const resp = await fetch(osrmUrl);
+    const data = await resp.json();
+    if (data.code === "Ok" && data.routes && data.routes.length > 0) {
+      const route = data.routes[0];
+      state.totalDistanceKm = Number((route.distance / 1000).toFixed(1));
+      state.totalDurationMin = Math.round(route.duration / 60);
+      state.legMetrics = (route.legs || []).map((leg) => ({
+        distanceKm: Number((leg.distance / 1000).toFixed(1)),
+        durationMin: Math.round(leg.duration / 60)
+      }));
+
+      const geoLayer = L.geoJSON(route.geometry, {
+        style: { color: "#2563eb", weight: 5, opacity: 0.85 }
+      }).addTo(routeLayer);
+
+      map.fitBounds(geoLayer.getBounds(), { padding: [35, 35] });
+    } else {
+      throw new Error("OSRM fallback");
+    }
+  } catch (err) {
+    let totalKm = 0;
+    const legs = [];
+    const latlngs = [];
+    for (let i = 0; i < validStops.length; i++) {
+      latlngs.push([validStops[i].lat, validStops[i].lng]);
+      if (i > 0) {
+        const prev = validStops[i - 1];
+        const curr = validStops[i];
+        const km = Number(calcHaversineRoadKm(prev.lat, prev.lng, curr.lat, curr.lng).toFixed(1));
+        const min = Math.round((km / 60) * 60);
+        totalKm += km;
+        legs.push({ distanceKm: km, durationMin: min });
+      }
+    }
+    state.totalDistanceKm = Number(totalKm.toFixed(1));
+    state.totalDurationMin = Math.round((totalKm / 60) * 60);
+    state.legMetrics = legs;
+
+    L.polyline(latlngs, { color: "#2563eb", weight: 4, dashArray: "8, 6" }).addTo(routeLayer);
+    map.fitBounds(bounds, { padding: [35, 35] });
+  }
+
+  renderRouteSlotsUI();
+  analyzeRouteProvincesAndOutArea();
+  updateMetricsUI();
+  renderPricingAndChat();
+}
+
+function updateMetricsUI() {
+  document.getElementById("metric-distance").textContent = `${state.totalDistanceKm.toFixed(1)} กม.`;
+  document.getElementById("metric-duration").textContent = formatDurationTh(state.totalDurationMin);
+  document.getElementById("metric-engine").textContent =
+    state.pricingMode === "trip" ? "ราคาตารางทัวร์ + นอกพื้นที่" : "คำนวณตามระยะทาง (กม.)";
+}
+
+// -------------------- PRICING & EXTRAS --------------------
+function getVehicleStopRatePerHour(vehicle) {
+  const reg = state.extras.stopRegion || "central";
+  if (reg === "central") {
+    if (vehicle && typeof vehicle.stopRateCentral === "number" && vehicle.stopRateCentral > 0) {
+      return vehicle.stopRateCentral;
+    }
+    return vehicle?.id === "vip_van" ? 350 : 250;
+  }
+  if (reg === "north") {
+    if (vehicle && typeof vehicle.stopRateNorth === "number" && vehicle.stopRateNorth > 0) {
+      return vehicle.stopRateNorth;
+    }
+    return 300;
+  }
+  const customSouth = Number(state.extras.southStopRate || 0);
+  if (customSouth > 0) return customSouth;
+  return Number(vehicle?.stopRateSouth || 0);
+}
+
+function computeSmileExtras(vehicle) {
+  const partsTh = [];
+  const specialReqNotes = [];
+  let totalExtra = 0;
+
+  const outArea = Number(state.extras.tourOutArea || 0);
+  if (outArea === 500) {
+    totalExtra += 500;
+    partsTh.push("นอกพื้นที่ใกล้ๆ +฿500");
+    specialReqNotes.push("out-of-area tour (nearby) +500");
+  } else if (outArea === 1000) {
+    totalExtra += 1000;
+    partsTh.push("เกิน 2 จังหวัด +฿1,000");
+    specialReqNotes.push("out-of-area tour (>2 provinces) +1000");
+  } else if (outArea === 1500) {
+    totalExtra += 1500;
+    partsTh.push("ไกลมาก +฿1,500");
+    specialReqNotes.push("long-distance tour surcharge +1500");
+  }
+
+  const stopHrs = Math.ceil(Number(state.extras.stopHours || 0));
+  if (stopHrs > 0) {
+    const ratePerHr = getVehicleStopRatePerHour(vehicle);
+    const regionLabel =
+      state.extras.stopRegion === "north"
+        ? "ภาคเหนือ"
+        : state.extras.stopRegion === "south"
+        ? "ภาคใต้"
+        : "ภาคกลาง";
+    const cost = stopHrs * ratePerHr;
+    totalExtra += cost;
+    partsTh.push(`แวะ (${regionLabel} ${stopHrs} ชม. × ฿${formatNumber(ratePerHr)}) +฿${formatNumber(cost)}`);
+    specialReqNotes.push(`stop on the way ${stopHrs}h +${cost}`);
+  }
+
+  if (Number(state.extras.childSeat) === 1) {
+    totalExtra += 300;
+    partsTh.push("คาร์ซีท +฿300");
+    specialReqNotes.push("Child seat x1 +300");
+  }
+
+  if (state.extras.nameSign === "100") {
+    totalExtra += 100;
+    partsTh.push("ป้ายชื่อ +฿100");
+    specialReqNotes.push("name sign +100");
+  } else if (state.extras.nameSign === "free_hkt") {
+    partsTh.push("ป้ายชื่อภูเก็ต ฟรี");
+    specialReqNotes.push("name sign (free at Phuket Airport)");
+  }
+
+  const tourOtHrs = Math.ceil(Number(state.extras.tourOtHours || 0));
+  if (tourOtHrs > 0) {
+    const cost = tourOtHrs * 250;
+    totalExtra += cost;
+    partsTh.push(`เกิน 10 ชม. (${tourOtHrs} ชม.) +฿${formatNumber(cost)}`);
+    specialReqNotes.push(`tour overtime ${tourOtHrs}h +${cost}`);
+  }
+
+  const nights = Math.max(0, Number(state.extras.overnightNights || 0));
+  if (nights > 0) {
+    const cost = nights * 500;
+    totalExtra += cost;
+    partsTh.push(`ค้างคืน ${nights} คืน +฿${formatNumber(cost)}`);
+    specialReqNotes.push(`driver overnight x${nights} +${cost}`);
+  }
+
+  if (state.extras.specialZone === "100") {
+    totalExtra += 100;
+    partsTh.push("ฝั่งธนบุรี +฿100");
+    specialReqNotes.push("Thonburi area +100");
+  } else if (state.extras.specialZone === "200") {
+    totalExtra += 200;
+    partsTh.push("ฝั่งธนบุรี +฿200");
+    specialReqNotes.push("Thonburi area +200");
+  } else if (state.extras.specialZone === "200_holiday") {
+    totalExtra += 200;
+    partsTh.push("เทศกาล +฿200");
+    specialReqNotes.push("Holiday surcharge +200");
+  }
+
+  const specialReqString =
+    specialReqNotes.length > 0 ? `${specialReqNotes.join(", ")} (included)` : "";
+
+  return {
+    totalExtra,
+    partsTh,
+    specialReqString
+  };
+}
+
+function getVehicleKmRates(vehicle) {
+  let minR = Number(vehicle.ratePerKmMin || vehicle.ratePerKm || 11);
+  let maxR = Number(vehicle.ratePerKmMax || vehicle.ratePerKm || 12);
+  if (vehicle.id === "sedan" && !vehicle.ratePerKmMin) {
+    minR = 11;
+    maxR = 12;
+  } else if (vehicle.id === "suv" && !vehicle.ratePerKmMin) {
+    minR = 13;
+    maxR = 14;
+  } else if (vehicle.id === "vip_van" && !vehicle.ratePerKmMin) {
+    minR = 16;
+    maxR = 18;
+  }
+  let chosenRate = maxR;
+  if (state.kmRateTier === "min") chosenRate = minR;
+  else if (state.kmRateTier === "mid") chosenRate = (minR + maxR) / 2;
+  return { minR, maxR, chosenRate };
+}
+
+function calculateVehiclePrice(vehicle) {
+  const activeTrip = DB.trips.find((t) => t.id === state.selectedTripId);
+  const extrasInfo = computeSmileExtras(vehicle);
+  const discount = Number(state.extras.discount || 0);
+  const { minR, maxR, chosenRate } = getVehicleKmRates(vehicle);
+
+  const multiplier = state.kmDirection === "roundtrip" ? 2 : 1;
+  const effectiveKm = Number((state.totalDistanceKm * multiplier).toFixed(1));
+  const baseFare = Number(vehicle.baseFare || 0);
+
+  const kmBaseChosen = baseFare + Math.round(effectiveKm * chosenRate);
+  const kmBaseMin = baseFare + Math.round(effectiveKm * minR);
+  const kmBaseMax = baseFare + Math.round(effectiveKm * maxR);
+  const kmTotalWithExtras = Math.max(0, kmBaseChosen + extrasInfo.totalExtra - discount);
+
+  const hasTableRate = Boolean(activeTrip && activeTrip.rates && activeTrip.rates[vehicle.id]);
+  const tableBaseRate = hasTableRate ? Number(activeTrip.rates[vehicle.id]) : 0;
+  const tableTotalWithExtras = hasTableRate
+    ? Math.max(0, tableBaseRate + extrasInfo.totalExtra - discount)
+    : 0;
+
+  let baseCharterPrice = 0;
+  let grandTotal = 0;
+  let grandMin = 0;
+  let grandMax = 0;
+  let modeLabelTh = "";
+  let breakdownTh = "";
+
+  if (state.pricingMode === "trip" && hasTableRate) {
+    baseCharterPrice = tableBaseRate;
+    grandTotal = tableTotalWithExtras;
+    grandMin = tableTotalWithExtras;
+    grandMax = tableTotalWithExtras;
+    modeLabelTh = `ราคาตาราง + นอกพื้นที่`;
+    breakdownTh = `ตารางทัวร์ ฿${formatNumber(tableBaseRate)}`;
+  } else {
+    baseCharterPrice = kmBaseChosen;
+    grandTotal = kmTotalWithExtras;
+    grandMin = Math.max(0, kmBaseMin + extrasInfo.totalExtra - discount);
+    grandMax = Math.max(0, kmBaseMax + extrasInfo.totalExtra - discount);
+    modeLabelTh = `คิดตาม กม. (${effectiveKm} กม. × ฿${chosenRate})`;
+    breakdownTh = `${effectiveKm} กม. × ฿${chosenRate}/กม. = ฿${formatNumber(kmBaseChosen)}`;
+  }
+
+  const allParts = [breakdownTh, ...extrasInfo.partsTh];
+  if (discount > 0) allParts.push(`ส่วนลด -฿${formatNumber(discount)}`);
+
+  return {
+    vehicle,
+    minR,
+    maxR,
+    chosenRate,
+    hasTableRate,
+    tableBaseRate,
+    tableTotalWithExtras,
+    kmBaseChosen,
+    kmTotalWithExtras,
+    baseCharterPrice,
+    effectiveKm,
+    extrasTotal: extrasInfo.totalExtra,
+    specialReqString: extrasInfo.specialReqString,
+    discount,
+    grandTotal,
+    grandMin,
+    grandMax,
+    modeLabelTh,
+    fullBreakdownTh: allParts.join(" | ")
+  };
+}
+
+// -------------------- UI RENDERING --------------------
+function setPricingMode(mode) {
+  state.pricingMode = mode;
+  const modeSel = document.getElementById("select-pricing-mode");
+  if (modeSel) modeSel.value = mode;
+  document.getElementById("group-km-direction").classList.toggle("hidden", mode === "trip");
+  document.getElementById("group-km-tier").classList.toggle("hidden", mode === "trip");
+  updateMetricsUI();
+  renderPricingAndChat();
+}
+
+function renderZoneAndTripSelectors() {
+  const zoneSelect = document.getElementById("select-zone-filter");
+  zoneSelect.innerHTML = `<option value="all">📋 ทุกหมวดทัวร์/แท็กซี่</option>`;
+  DB.zones.forEach((z) => {
+    const opt = document.createElement("option");
+    opt.value = z.id;
+    opt.textContent = `📍 ${z.nameTh}`;
+    zoneSelect.appendChild(opt);
+  });
+  zoneSelect.value = state.selectedZone;
+
+  const tripSelect = document.getElementById("select-preset-trip");
+  tripSelect.innerHTML = `<option value="">📏 กำหนดเส้นทางเอง (คำนวณตามระยะทาง กม.)</option>`;
+  const filteredTrips =
+    state.selectedZone === "all"
+      ? DB.trips
+      : DB.trips.filter((t) => t.zoneId === state.selectedZone);
+
+  filteredTrips.forEach((t) => {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = `${t.nameTh} — Sedan ฿${formatNumber(t.rates?.sedan)} / SUV ฿${formatNumber(t.rates?.suv)} / Van ฿${formatNumber(t.rates?.vip_van)}`;
+    tripSelect.appendChild(opt);
+  });
+  tripSelect.value = state.selectedTripId || "";
+
+  const quickPlaceSelect = document.getElementById("select-quick-place-insert");
+  if (quickPlaceSelect) {
+    quickPlaceSelect.innerHTML = `<option value="">📌 เลือกด่วนจากคลังสถานที่...</option>`;
+    DB.places.forEach((p) => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = `+ ${p.nameTh}`;
+      quickPlaceSelect.appendChild(opt);
+    });
+  }
+}
+
+function loadPresetTrip(tripId) {
+  const trip = DB.trips.find((t) => t.id === tripId);
+  if (!trip) {
+    state.selectedTripId = "";
+    setPricingMode("km");
+    return;
+  }
+  state.selectedTripId = trip.id;
+  state.tripTitle = trip.nameEn || trip.nameTh;
+
+  const loadedStops = [];
+  (trip.stopIds || []).forEach((pid) => {
+    const p = DB.places.find((pl) => pl.id === pid);
+    if (p) {
+      loadedStops.push({
+        id: p.id,
+        nameTh: p.nameTh,
+        nameEn: p.nameEn,
+        lat: p.lat,
+        lng: p.lng
+      });
+    }
+  });
+  state.stops = loadedStops;
+  ensureMinimumTwoSlots();
+  setPricingMode("trip");
+  updateRouteAndRecalculate();
+}
+
+function getRouteEnText() {
+  const valid = state.stops.filter((s) => s.nameEn || s.nameTh);
+  if (valid.length === 0) return state.tripTitle || "Custom Route";
+  return valid.map((s) => s.nameEn || s.nameTh).join(" → ");
+}
+
+function getRouteThText() {
+  const valid = state.stops.filter((s) => s.nameTh || s.nameEn);
+  if (valid.length === 0) return state.tripTitle || "เส้นทางกำหนดเอง";
+  return valid.map((s) => s.nameTh || s.nameEn).join(" → ");
+}
+
+function renderPricingAndChat() {
+  const cardsContainer = document.getElementById("vehicle-cards-container");
+  cardsContainer.innerHTML = "";
+
+  const allResults = DB.vehicles.map((v) => calculateVehiclePrice(v));
+  let selectedResult = allResults.find((r) => r.vehicle.id === state.selectedVehicleId) || allResults[0];
+  if (selectedResult) {
+    state.selectedVehicleId = selectedResult.vehicle.id;
+  }
+
+  allResults.forEach((res) => {
+    const v = res.vehicle;
+    let subLine = `ช่วงเรท ${res.minR}–${res.maxR}฿/กม. (฿${formatNumber(res.grandMin)}–฿${formatNumber(res.grandMax)})`;
+    if (state.pricingMode === "trip" && res.hasTableRate) {
+      subLine = `ตาราง ฿${formatNumber(res.tableBaseRate)} (ตาม กม. = ฿${formatNumber(res.kmTotalWithExtras)})`;
+    }
+
+    const card = document.createElement("div");
+    card.className = `vehicle-card ${v.id === state.selectedVehicleId ? "active" : ""}`;
+    card.innerHTML = `
+      <div class="veh-info">
+        <h4>${v.icon || "🚕"} ${v.nameTh}</h4>
+      </div>
+      <div class="veh-price">
+        <strong>฿${formatNumber(res.grandTotal)}</strong>
+        <span>${subLine}</span>
+      </div>
+    `;
+    card.addEventListener("click", () => {
+      state.selectedVehicleId = v.id;
+      renderPricingAndChat();
+    });
+    cardsContainer.appendChild(card);
+  });
+
+  if (selectedResult) {
+    document.getElementById("summary-vehicle-name").textContent = `${selectedResult.vehicle.nameTh} • ${selectedResult.modeLabelTh}`;
+    document.getElementById("summary-total-price").textContent = `฿${formatNumber(selectedResult.grandTotal)} THB`;
+    document.getElementById("summary-breakdown-text").textContent = selectedResult.fullBreakdownTh;
+    document.getElementById("output-special-request").value = selectedResult.specialReqString || "-";
+  }
+}
+
+async function saveCurrentRouteAsPresetTrip() {
+  if (state.stops.length < 2) {
+    showToast("กรุณาระบุจุดรับและจุดส่งอย่างน้อย 2 จุดก่อนบันทึกค่ะ");
+    return;
+  }
+
+  const allResults = DB.vehicles.map((v) => calculateVehiclePrice(v));
+  const rates = {};
+  allResults.forEach((r) => {
+    rates[r.vehicle.id] = r.grandTotal;
+  });
+
+  const stopIds = [];
+  state.stops.forEach((st) => {
+    const existing = DB.places.find(
+      (p) => Math.abs(p.lat - st.lat) < 0.001 && Math.abs(p.lng - st.lng) < 0.001
+    );
+    if (existing) {
+      stopIds.push(existing.id);
+    } else {
+      const newPid = "place_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+      DB.places.push({
+        id: newPid,
+        zoneId: "tours_manual",
+        nameTh: st.nameTh,
+        nameEn: st.nameEn || st.nameTh,
+        lat: st.lat,
+        lng: st.lng
+      });
+      stopIds.push(newPid);
+    }
+  });
+
+  const nameTh = getRouteThText();
+  const nameEn = getRouteEnText();
+  const newTrip = {
+    id: "trip_" + Date.now(),
+    zoneId: "tours_manual",
+    type: "tour",
+    nameTh: `${nameTh} (${state.totalDistanceKm.toFixed(1)} กม.)`,
+    nameEn,
+    days: 1,
+    stopIds,
+    rates
+  };
+
+  DB.trips.unshift(newTrip);
+  state.selectedTripId = newTrip.id;
+  await saveDatabase({ trips: DB.trips, places: DB.places });
+  renderAll();
+  renderPricingAndChat();
+  showToast(`✅ บันทึก "${newTrip.nameTh}" เข้าตารางทัวร์เรียบร้อย!`);
+}
+
+// -------------------- VEHICLES EDITOR --------------------
+function renderVehiclesEditor() {
+  const container = document.getElementById("vehicles-editor-list");
+  container.innerHTML = "";
+
+  DB.vehicles.forEach((v, idx) => {
+    const { minR, maxR } = getVehicleKmRates(v);
+    const centralStop = typeof v.stopRateCentral === "number" ? v.stopRateCentral : v.id === "vip_van" ? 350 : 250;
+    const northStop = typeof v.stopRateNorth === "number" ? v.stopRateNorth : 300;
+    const div = document.createElement("div");
+    div.className = "vehicle-edit-card";
+    div.innerHTML = `
+      <div class="form-row" style="margin-bottom:0;">
+        <div class="form-group flex-2">
+          <label>ชื่อรถ</label>
+          <input type="text" data-vfield="nameTh" data-vidx="${idx}" value="${v.nameTh}" />
+        </div>
+        <div class="form-group">
+          <label>กม. ต่ำสุด (฿)</label>
+          <input type="number" data-vfield="ratePerKmMin" data-vidx="${idx}" value="${minR}" step="0.5" />
+        </div>
+        <div class="form-group">
+          <label>กม. สูงสุด (฿)</label>
+          <input type="number" data-vfield="ratePerKmMax" data-vidx="${idx}" value="${maxR}" step="0.5" />
+        </div>
+        <div class="form-group">
+          <label>แวะกลาง (฿/ชม.)</label>
+          <input type="number" data-vfield="stopRateCentral" data-vidx="${idx}" value="${centralStop}" step="50" />
+        </div>
+        <div class="form-group">
+          <label>แวะเหนือ (฿/ชม.)</label>
+          <input type="number" data-vfield="stopRateNorth" data-vidx="${idx}" value="${northStop}" step="50" />
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// -------------------- DATABASE TAB --------------------
+function renderDatabaseTab() {
+  const tripZoneSel = document.getElementById("new-trip-zone");
+  const placeZoneSel = document.getElementById("new-place-zone");
+  tripZoneSel.innerHTML = "";
+  placeZoneSel.innerHTML = "";
+  DB.zones.forEach((z) => {
+    tripZoneSel.innerHTML += `<option value="${z.id}">${z.nameTh}</option>`;
+    placeZoneSel.innerHTML += `<option value="${z.id}">${z.nameTh}</option>`;
+  });
+
+  const rateRow = document.getElementById("new-trip-vehicle-rates");
+  rateRow.innerHTML = "";
+  DB.vehicles.forEach((v) => {
+    rateRow.innerHTML += `
+      <div class="form-group">
+        <label>ราคาเหมา: ${v.nameTh} (฿)</label>
+        <input type="number" class="new-trip-rate-input" data-vehid="${v.id}" value="0" />
+      </div>
+    `;
+  });
+
+  const tripsList = document.getElementById("db-trips-list");
+  tripsList.innerHTML = "";
+  DB.trips.forEach((t) => {
+    const rateSummary = DB.vehicles
+      .map((v) => `${v.nameEn}: ฿${formatNumber(t.rates?.[v.id] || 0)}`)
+      .join(" | ");
+    const item = document.createElement("div");
+    item.className = "db-item";
+    item.innerHTML = `
+      <div class="db-item-info">
+        <h4>${t.nameTh}</h4>
+        <p style="color:#1d4ed8;font-weight:600;">${rateSummary}</p>
+      </div>
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn-outline btn-xs" data-loadtrip="${t.id}">เลือกใช้</button>
+        <button class="btn btn-outline btn-xs" data-edittrip="${t.id}">แก้ราคา</button>
+        <button class="btn btn-danger btn-xs" data-deltrip="${t.id}">ลบ</button>
+      </div>
+    `;
+    tripsList.appendChild(item);
+  });
+
+  tripsList.querySelectorAll("[data-loadtrip]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      switchTab("tab-vehicles");
+      loadPresetTrip(btn.dataset.loadtrip);
+      renderZoneAndTripSelectors();
+      showToast("โหลดเส้นทางเข้าหน้าหลักแล้ว");
+    });
+  });
+
+  tripsList.querySelectorAll("[data-edittrip]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const t = DB.trips.find((tr) => tr.id === btn.dataset.edittrip);
+      if (!t) return;
+      document.getElementById("trip-form-title").textContent = `✏️ แก้ไขราคา: ${t.nameTh}`;
+      document.getElementById("edit-trip-id").value = t.id;
+      document.getElementById("new-trip-zone").value = t.zoneId;
+      document.getElementById("new-trip-nameth").value = t.nameTh;
+      document.getElementById("new-trip-nameen").value = t.nameEn;
+      document.getElementById("new-trip-days").value = t.days || 1;
+      state.tempTripStopIds = [...(t.stopIds || [])];
+      document.querySelectorAll(".new-trip-rate-input").forEach((inp) => {
+        inp.value = t.rates?.[inp.dataset.vehid] || 0;
+      });
+      document.getElementById("btn-cancel-trip-edit").classList.remove("hidden");
+    });
+  });
+
+  tripsList.querySelectorAll("[data-deltrip]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      DB.trips = DB.trips.filter((t) => t.id !== btn.dataset.deltrip);
+      await saveDatabase({ trips: DB.trips });
+      renderDatabaseTab();
+      renderZoneAndTripSelectors();
+      showToast("ลบเส้นทางแล้ว");
+    });
+  });
+
+  const placesList = document.getElementById("db-places-list");
+  placesList.innerHTML = "";
+  DB.places.forEach((p) => {
+    const item = document.createElement("div");
+    item.className = "db-item";
+    item.innerHTML = `
+      <div class="db-item-info">
+        <h4>${p.nameTh}</h4>
+        <p>${p.nameEn} • (${p.lat}, ${p.lng})</p>
+      </div>
+      <button class="btn btn-danger btn-xs" data-delplace="${p.id}">ลบ</button>
+    `;
+    placesList.appendChild(item);
+  });
+
+  placesList.querySelectorAll("[data-delplace]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      DB.places = DB.places.filter((p) => p.id !== btn.dataset.delplace);
+      await saveDatabase({ places: DB.places });
+      renderDatabaseTab();
+      renderZoneAndTripSelectors();
+      showToast("ลบสถานที่แล้ว");
+    });
+  });
+}
+
+// -------------------- EVENTS --------------------
+function switchTab(tabId) {
+  document.querySelectorAll(".nav-btn").forEach((b) => {
+    b.classList.toggle("active", b.dataset.tab === tabId);
+  });
+  document.querySelectorAll(".tab-panel").forEach((p) => {
+    p.classList.toggle("active", p.id === tabId);
+  });
+  if (tabId === "tab-vehicles" && map) {
+    setTimeout(() => map.invalidateSize(), 150);
+  }
+}
+
+function bindEvents() {
+  document.querySelectorAll(".nav-btn").forEach((btn) => {
+    btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+  });
+
+  document.getElementById("select-zone-filter").addEventListener("change", (e) => {
+    state.selectedZone = e.target.value;
+    renderZoneAndTripSelectors();
+  });
+
+  document.getElementById("select-preset-trip").addEventListener("change", (e) => {
+    const tripId = e.target.value;
+    if (!tripId) {
+      state.selectedTripId = "";
+      state.tripTitle = "Custom Route";
+      setPricingMode("km");
+    } else {
+      loadPresetTrip(tripId);
+    }
+  });
+
+  const autoOutChk = document.getElementById("chk-auto-outarea");
+  if (autoOutChk) {
+    autoOutChk.addEventListener("change", (e) => {
+      state.autoDetectOutArea = e.target.checked;
+      analyzeRouteProvincesAndOutArea();
+      renderPricingAndChat();
+    });
+  }
+
+  document.getElementById("btn-add-waypoint-slot").addEventListener("click", addWaypointSlot);
+
+  document.getElementById("select-quick-place-insert").addEventListener("change", (e) => {
+    const pid = e.target.value;
+    if (!pid) return;
+    const place = DB.places.find((p) => p.id === pid);
+    if (place) {
+      const emptyIdx = state.stops.findIndex((s) => !s.nameTh);
+      const newStop = {
+        id: place.id + "_" + Date.now(),
+        nameTh: place.nameTh,
+        nameEn: place.nameEn,
+        lat: place.lat,
+        lng: place.lng
+      };
+      if (emptyIdx !== -1) {
+        state.stops[emptyIdx] = newStop;
+      } else {
+        state.stops.push(newStop);
+      }
+      updateRouteAndRecalculate();
+      showToast(`➕ เพิ่ม "${place.nameTh}" แล้ว`);
+    }
+    e.target.value = "";
+  });
+
+  document.getElementById("btn-reset-route").addEventListener("click", () => {
+    state.selectedTripId = "";
+    document.getElementById("select-preset-trip").value = "";
+    state.stops = [
+      { id: "slot_pickup", nameTh: "", nameEn: "", lat: 13.6900, lng: 100.7501 },
+      { id: "slot_dropoff", nameTh: "", nameEn: "", lat: 13.7462, lng: 100.5347 }
+    ];
+    setPricingMode("km");
+    updateRouteAndRecalculate();
+    showToast("ล้างหมุดแล้ว วางจุดรับ-จุดส่งหรือลิงก์ Google Maps ใหม่ได้เลยค่ะ");
+  });
+
+  document.getElementById("btn-return-to-start").addEventListener("click", () => {
+    if (state.stops.length < 2) return;
+    const first = state.stops[0];
+    state.stops.push({ ...first, id: first.id + "_return_" + Date.now() });
+    updateRouteAndRecalculate();
+    showToast(`🔄 เพิ่มจุดส่งกลับมาที่ "${first.nameTh}" แล้ว`);
+  });
+
+  document.getElementById("select-pricing-mode").addEventListener("change", (e) => {
+    setPricingMode(e.target.value);
+  });
+
+  document.getElementById("select-km-direction").addEventListener("change", (e) => {
+    state.kmDirection = e.target.value;
+    updateMetricsUI();
+    renderPricingAndChat();
+  });
+
+  document.getElementById("select-km-rate-tier").addEventListener("change", (e) => {
+    state.kmRateTier = e.target.value;
+    renderPricingAndChat();
+  });
+
+  document.querySelectorAll("#outarea-pill-buttons [data-outarea]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.autoDetectOutArea = false;
+      const chk = document.getElementById("chk-auto-outarea");
+      if (chk) chk.checked = false;
+      state.extras.tourOutArea = Number(btn.dataset.outarea || 0);
+      updateOutAreaPillButtonsUI();
+      renderPricingAndChat();
+    });
+  });
+
+  document.querySelectorAll("#stop-region-buttons [data-stopregion]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#stop-region-buttons [data-stopregion]").forEach((b) =>
+        b.classList.remove("active")
+      );
+      btn.classList.add("active");
+      state.extras.stopRegion = btn.dataset.stopregion;
+      const southGroup = document.getElementById("south-stop-rate-group");
+      if (southGroup) {
+        southGroup.classList.toggle("hidden", state.extras.stopRegion !== "south");
+      }
+      renderPricingAndChat();
+    });
+  });
+
+  const southStopInput = document.getElementById("extra-south-stop-rate");
+  if (southStopInput) {
+    southStopInput.addEventListener("input", (e) => {
+      state.extras.southStopRate = Number(e.target.value || 0);
+      renderPricingAndChat();
+    });
+  }
+
+  document.getElementById("extra-stop-hours").addEventListener("input", (e) => {
+    state.extras.stopHours = Number(e.target.value || 0);
+    analyzeRouteProvincesAndOutArea();
+    renderPricingAndChat();
+  });
+
+  document.getElementById("extra-child-seat").addEventListener("change", (e) => {
+    state.extras.childSeat = Number(e.target.value || 0);
+    renderPricingAndChat();
+  });
+  document.getElementById("extra-name-sign").addEventListener("change", (e) => {
+    state.extras.nameSign = e.target.value;
+    renderPricingAndChat();
+  });
+  document.getElementById("extra-tour-ot-hours").addEventListener("input", (e) => {
+    state.extras.tourOtHours = Number(e.target.value || 0);
+    renderPricingAndChat();
+  });
+  document.getElementById("extra-overnight-nights").addEventListener("input", (e) => {
+    state.extras.overnightNights = Number(e.target.value || 0);
+    renderPricingAndChat();
+  });
+  document.getElementById("extra-special-zone").addEventListener("change", (e) => {
+    state.extras.specialZone = e.target.value;
+    renderPricingAndChat();
+  });
+  document.getElementById("extra-discount").addEventListener("input", (e) => {
+    state.extras.discount = Number(e.target.value || 0);
+    renderPricingAndChat();
+  });
+
+  document.getElementById("btn-copy-special-req").addEventListener("click", async () => {
+    const val = document.getElementById("output-special-request").value;
+    if (!val || val === "-") {
+      showToast("ยังไม่มีรายการค่าบริการเพิ่มครับ");
+      return;
+    }
+    await navigator.clipboard.writeText(val);
+    showToast(`📋 คัดลอก "${val}" แล้ว!`);
+  });
+
+  document.getElementById("btn-save-as-preset-trip").addEventListener("click", saveCurrentRouteAsPresetTrip);
+
+  document.getElementById("btn-save-vehicles").addEventListener("click", async () => {
+    document.querySelectorAll("[data-vfield]").forEach((inp) => {
+      const idx = Number(inp.dataset.vidx);
+      const field = inp.dataset.vfield;
+      if (!DB.vehicles[idx]) return;
+      if (["nameTh", "nameEn", "icon"].includes(field)) {
+        DB.vehicles[idx][field] = inp.value.trim();
+      } else {
+        DB.vehicles[idx][field] = Number(inp.value || 0);
+      }
+    });
+    await saveDatabase({ vehicles: DB.vehicles });
+    renderVehiclesEditor();
+    renderDatabaseTab();
+    renderZoneAndTripSelectors();
+    renderPricingAndChat();
+    showToast("💾 บันทึกเรท กม. เรียบร้อย!");
+  });
+
+  document.getElementById("btn-use-current-stops").addEventListener("click", () => {
+    if (state.stops.length === 0) return;
+    const ids = [];
+    state.stops.forEach((st) => {
+      const existing = DB.places.find(
+        (p) => Math.abs(p.lat - st.lat) < 0.001 && Math.abs(p.lng - st.lng) < 0.001
+      );
+      if (existing) {
+        ids.push(existing.id);
+      } else {
+        const newId = "place_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        DB.places.push({
+          id: newId,
+          zoneId: document.getElementById("new-trip-zone").value || "bkk_airport",
+          nameTh: st.nameTh,
+          nameEn: st.nameEn,
+          lat: st.lat,
+          lng: st.lng
+        });
+        ids.push(newId);
+      }
+    });
+    state.tempTripStopIds = ids;
+    document.getElementById("new-trip-stops-display").value =
+      state.stops.map((s) => s.nameTh).join(" → ");
+    document.getElementById("new-trip-nameth").value = getRouteThText();
+    document.getElementById("new-trip-nameen").value = getRouteEnText();
+    const allResults = DB.vehicles.map((v) => calculateVehiclePrice(v));
+    document.querySelectorAll(".new-trip-rate-input").forEach((inp) => {
+      const found = allResults.find((r) => r.vehicle.id === inp.dataset.vehid);
+      if (found) inp.value = found.grandTotal;
+    });
+    showToast("📍 ดึงจุดแวะและราคาที่คำนวณได้มาใส่ฟอร์มแล้วค่ะ!");
+  });
+
+  document.getElementById("btn-save-trip-db").addEventListener("click", async () => {
+    const editId = document.getElementById("edit-trip-id").value;
+    const zoneId = document.getElementById("new-trip-zone").value;
+    const nameTh = document.getElementById("new-trip-nameth").value.trim();
+    const nameEn = document.getElementById("new-trip-nameen").value.trim() || nameTh;
+    const days = Math.max(1, Number(document.getElementById("new-trip-days").value || 1));
+    if (!nameTh) return;
+
+    const rates = {};
+    document.querySelectorAll(".new-trip-rate-input").forEach((inp) => {
+      rates[inp.dataset.vehid] = Number(inp.value || 0);
+    });
+
+    if (editId) {
+      const idx = DB.trips.findIndex((t) => t.id === editId);
+      if (idx !== -1) {
+        DB.trips[idx] = {
+          ...DB.trips[idx],
+          zoneId,
+          nameTh,
+          nameEn,
+          days,
+          rates,
+          stopIds: state.tempTripStopIds.length > 0 ? state.tempTripStopIds : DB.trips[idx].stopIds
+        };
+      }
+    } else {
+      DB.trips.unshift({
+        id: "trip_" + Date.now(),
+        zoneId,
+        type: "custom",
+        nameTh,
+        nameEn,
+        days,
+        stopIds: state.tempTripStopIds,
+        rates
+      });
+    }
+
+    await saveDatabase({ trips: DB.trips, places: DB.places });
+    document.getElementById("edit-trip-id").value = "";
+    document.getElementById("new-trip-nameth").value = "";
+    document.getElementById("new-trip-nameen").value = "";
+    document.getElementById("new-trip-stops-display").value = "";
+    document.getElementById("btn-cancel-trip-edit").classList.add("hidden");
+    state.tempTripStopIds = [];
+    renderDatabaseTab();
+    renderZoneAndTripSelectors();
+    renderPricingAndChat();
+    showToast("💾 บันทึกเส้นทางเรียบร้อย!");
+  });
+
+  document.getElementById("btn-cancel-trip-edit").addEventListener("click", () => {
+    document.getElementById("edit-trip-id").value = "";
+    document.getElementById("new-trip-nameth").value = "";
+    document.getElementById("new-trip-nameen").value = "";
+    document.getElementById("btn-cancel-trip-edit").classList.add("hidden");
+  });
+
+  document.getElementById("btn-add-place-db").addEventListener("click", async () => {
+    const zoneId = document.getElementById("new-place-zone").value;
+    const nameTh = document.getElementById("new-place-nameth").value.trim();
+    const nameEn = document.getElementById("new-place-nameen").value.trim() || nameTh;
+    const rawCoords = document.getElementById("new-place-coords").value.trim();
+
+    try {
+      const resolved = await resolvePlaceOrGoogleMap(rawCoords || nameTh);
+      const first = resolved[0];
+      DB.places.unshift({
+        id: "place_" + Date.now(),
+        zoneId,
+        nameTh: nameTh || first.nameTh,
+        nameEn: nameEn || first.nameEn,
+        lat: first.lat,
+        lng: first.lng
+      });
+      await saveDatabase({ places: DB.places });
+      document.getElementById("new-place-nameth").value = "";
+      document.getElementById("new-place-nameen").value = "";
+      document.getElementById("new-place-coords").value = "";
+      renderDatabaseTab();
+      renderZoneAndTripSelectors();
+      showToast("📍 เพิ่มสถานที่เข้าคลังเรียบร้อย!");
+    } catch (err) {
+      showToast(`⚠️ ${err.message}`);
+    }
+  });
+}
+
+function renderAll() {
+  renderZoneAndTripSelectors();
+  renderVehiclesEditor();
+  renderDatabaseTab();
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+  await fetchDatabase();
+  initMap();
+  bindEvents();
+  renderAll();
+  ensureMinimumTwoSlots();
+  setPricingMode("km");
+  updateRouteAndRecalculate();
+});
+
+</script>
+</body>
+</html>
