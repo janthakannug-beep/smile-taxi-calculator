@@ -1108,6 +1108,7 @@ const DEFAULT_SEED_DATA = {
   zones: [
     { id: "bkk_airport", nameTh: "รับ-ส่ง สนามบินสุวรรณภูมิ (Airport BKK)", nameEn: "Suvarnabhumi Airport (BKK) Routes" },
     { id: "dmk_bkk", nameTh: "รับ-ส่ง ดอนเมือง (DMK) & กรุงเทพฯ", nameEn: "Don Mueang (DMK) & Bangkok Routes" },
+    { id: "north_sukhothai", nameTh: "ภาคเหนือ & สุโขทัย (Sukhothai & North)", nameEn: "Sukhothai & North Routes" },
     { id: "tours_manual", nameTh: "ทัวร์รายวัน (อยุธยา / กรุงเทพฯ / เขาใหญ่ / กาญจนบุรี)", nameEn: "Day Tours" },
     { id: "south_north", nameTh: "ภาคใต้ & ภาคเหนือ (ภูเก็ต / เขาหลัก / กระบี่ / เชียงใหม่ / เชียงราย)", nameEn: "South & North Routes" }
   ],
@@ -1127,6 +1128,9 @@ const DEFAULT_SEED_DATA = {
     { id: "khaoyai", zoneId: "bkk_airport", nameTh: "เขาใหญ่ (Khao Yai / National Park)", nameEn: "Khao Yai", lat: 14.4392, lng: 101.3724 },
     { id: "chiangmai", zoneId: "south_north", nameTh: "เชียงใหม่ (Chiang Mai)", nameEn: "Chiang Mai", lat: 18.7883, lng: 98.9853 },
     { id: "chiangrai", zoneId: "south_north", nameTh: "เชียงราย (Chiang Rai)", nameEn: "Chiang Rai", lat: 19.9105, lng: 99.8406 },
+    { id: "sukhothai", zoneId: "north_sukhothai", nameTh: "สุโขทัย (เมืองใหม่ / อุทยานประวัติศาสตร์)", nameEn: "Sukhothai (New City / Old City)", lat: 17.0078, lng: 99.8230 },
+    { id: "ths_airport", zoneId: "north_sukhothai", nameTh: "สนามบินสุโขทัย — Sukhothai Airport (THS)", nameEn: "Sukhothai Airport (THS)", lat: 17.2381, lng: 99.8183 },
+    { id: "phs_airport", zoneId: "north_sukhothai", nameTh: "สนามบินพิษณุโลก — Phitsanulok Airport (PHS)", nameEn: "Phitsanulok Airport (PHS)", lat: 16.7829, lng: 100.2791 },
     { id: "phuket_airport", zoneId: "south_north", nameTh: "สนามบินภูเก็ต — Phuket(Airport)", nameEn: "Phuket (Airport)", lat: 8.1111, lng: 98.3065 },
     { id: "phuket_beach", zoneId: "south_north", nameTh: "หาดป่าตอง / กะตะ ภูเก็ต (Patong / Kata Beach)", nameEn: "Patong / Kata Beach, Phuket", lat: 7.8965, lng: 98.2965 },
     { id: "khaolak", zoneId: "south_north", nameTh: "เขาหลัก พังงา (Khao Lak)", nameEn: "Khao Lak", lat: 8.6650, lng: 98.2485 },
@@ -1150,6 +1154,13 @@ const DEFAULT_SEED_DATA = {
     { id: "st_city_huahin", zoneId: "dmk_bkk", type: "taxi", nameTh: "Bangkok (Sathorn/Silom) ↔ Hua Hin (กรุงเทพฯ ↔ หัวหิน)", nameEn: "Bangkok → Hua Hin", days: 1, stopIds: ["bkk_city", "huahin"], rates: { sedan: 2000, suv: 2200, vip_van: 2800 } },
     { id: "st_pattaya_utp", zoneId: "dmk_bkk", type: "taxi", nameTh: "Pattaya (Jomtien) ↔ U-Tapao Airport (UTP)", nameEn: "Pattaya → U-Tapao Airport (UTP)", days: 1, stopIds: ["pattaya", "utapao_airport"], rates: { sedan: 800, suv: 1000, vip_van: 1300 } },
     { id: "st_hkt_kata_patong", zoneId: "south_north", type: "taxi", nameTh: "Phuket Airport ↔ Kata / Patong Beach (สนามบินภูเก็ต ↔ กะตะ/ป่าตอง)", nameEn: "Phuket Airport → Kata / Patong Beach", days: 1, stopIds: ["phuket_airport", "phuket_beach"], rates: { sedan: 800, suv: 1000, vip_van: 1200 }, isSouthRoute: true },
+    { id: "st_ths_sukhothai", zoneId: "north_sukhothai", type: "taxi", nameTh: "Sukhothai Airport (THS) ↔ Sukhothai (สนามบินสุโขทัย ↔ สุโขทัย)", nameEn: "Sukhothai Airport (THS) → Sukhothai", days: 1, stopIds: ["ths_airport", "sukhothai"], rates: { sedan: 800, suv: 1000, vip_van: 1300 }, isNorthRoute: true },
+    { id: "st_phs_sukhothai", zoneId: "north_sukhothai", type: "taxi", nameTh: "Phitsanulok Airport (PHS) ↔ Sukhothai (สนามบินพิษณุโลก ↔ สุโขทัย)", nameEn: "Phitsanulok Airport (PHS) → Sukhothai", days: 1, stopIds: ["phs_airport", "sukhothai"], rates: { sedan: 1100, suv: 1400, vip_van: 1800 }, isNorthRoute: true },
+    { id: "st_bkkcity_sukhothai", zoneId: "north_sukhothai", type: "taxi", nameTh: "Bangkok (City) ↔ Sukhothai (กรุงเทพฯ ↔ สุโขทัย)", nameEn: "Bangkok → Sukhothai", days: 1, stopIds: ["bkk_city", "sukhothai"], rates: { sedan: 5200, suv: 6000, vip_van: 7000 }, isNorthRoute: true },
+    { id: "st_bkk_sukhothai", zoneId: "north_sukhothai", type: "taxi", nameTh: "Suvarnabhumi Airport (BKK) ↔ Sukhothai (สุวรรณภูมิ ↔ สุโขทัย)", nameEn: "Airport(BKK) → Sukhothai", days: 1, stopIds: ["bkk_airport", "sukhothai"], rates: { sedan: 5200, suv: 6000, vip_van: 7000 }, isNorthRoute: true },
+    { id: "st_dmk_sukhothai", zoneId: "north_sukhothai", type: "taxi", nameTh: "Don Mueang Airport (DMK) ↔ Sukhothai (ดอนเมือง ↔ สุโขทัย)", nameEn: "Airport(DMK) → Sukhothai", days: 1, stopIds: ["dmk_airport", "sukhothai"], rates: { sedan: 5000, suv: 5700, vip_van: 6800 }, isNorthRoute: true },
+    { id: "st_sukhothai_chiangmai", zoneId: "north_sukhothai", type: "taxi", nameTh: "Sukhothai ↔ Chiang Mai (สุโขทัย ↔ เชียงใหม่)", nameEn: "Sukhothai → Chiang Mai", days: 1, stopIds: ["sukhothai", "chiangmai"], rates: { sedan: 4200, suv: 4700, vip_van: 6000 }, isNorthRoute: true },
+    { id: "st_sukhothai_ayutthaya", zoneId: "north_sukhothai", type: "taxi", nameTh: "Sukhothai ↔ Ayutthaya (สุโขทัย ↔ อยุธยา)", nameEn: "Sukhothai → Ayutthaya", days: 1, stopIds: ["sukhothai", "ayutthaya"], rates: { sedan: 4700, suv: 5400, vip_van: 6500 }, isNorthRoute: true },
     { id: "tour_ayutthaya", zoneId: "tours_manual", type: "tour", nameTh: "ทัวร์อยุธยา (Bangkok → Ayutthaya Day Tour)", nameEn: "Bangkok → Ayutthaya Day Tour", days: 1, stopIds: ["bkk_city", "ayutthaya", "bkk_city"], rates: { sedan: 1500, suv: 2000, vip_van: 2500 } },
     { id: "tour_bkk_temples", zoneId: "tours_manual", type: "tour", nameTh: "ทัวร์กรุงเทพฯ วัดพระแก้ว & วัดอรุณ (Bangkok → Grand Palace & Wat Arun)", nameEn: "Bangkok → Grand Palace and Wat Arun Tour", days: 1, stopIds: ["bkk_city", "bkk_grand_palace", "bkk_city"], rates: { sedan: 2500, suv: 3000, vip_van: 3500 } },
     { id: "tour_khaoyai", zoneId: "tours_manual", type: "tour", nameTh: "ทัวร์เขาใหญ่ (Khao Yai → Khao Yai National Park Tour)", nameEn: "Khao Yai → Khao Yai National Park Tour", days: 1, stopIds: ["bkk_city", "khaoyai", "bkk_city"], rates: { sedan: 3500, suv: 4000, vip_van: 4500 } },
@@ -1179,6 +1190,8 @@ const THAI_PROVINCE_CENTERS = [
   { name: "นครปฐม", lat: 13.8199, lng: 100.0622 },
   { name: "กาญจนบุรี", lat: 14.0228, lng: 99.5328 },
   { name: "นครราชสีมา (เขาใหญ่)", lat: 14.5500, lng: 101.4000 },
+  { name: "สุโขทัย", lat: 17.0078, lng: 99.8230 },
+  { name: "พิษณุโลก", lat: 16.8211, lng: 100.2659 },
   { name: "เชียงใหม่", lat: 18.7883, lng: 98.9853 },
   { name: "เชียงราย", lat: 19.9105, lng: 99.8406 },
   { name: "แม่ฮ่องสอน", lat: 19.3582, lng: 98.4405 },
@@ -1276,11 +1289,33 @@ function normalizeProvinceGroup(provName) {
 }
 
 // -------------------- 100% STANDALONE DATABASE (LOCALSTORAGE) --------------------
+function mergeMissingSeedItems(existingList = [], seedList = []) {
+  const existingIds = new Set(existingList.map((item) => item && item.id).filter(Boolean));
+  const merged = [...existingList];
+  seedList.forEach((seedItem) => {
+    if (seedItem && seedItem.id && !existingIds.has(seedItem.id)) {
+      merged.push(JSON.parse(JSON.stringify(seedItem)));
+      existingIds.add(seedItem.id);
+    }
+  });
+  return merged;
+}
+
 async function fetchDatabase() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      DB = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      DB = {
+        ...JSON.parse(JSON.stringify(DEFAULT_SEED_DATA)),
+        ...parsed,
+        zones: mergeMissingSeedItems(parsed.zones, DEFAULT_SEED_DATA.zones),
+        places: mergeMissingSeedItems(parsed.places, DEFAULT_SEED_DATA.places),
+        trips: mergeMissingSeedItems(parsed.trips, DEFAULT_SEED_DATA.trips)
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+      } catch (e) {}
       return;
     }
   } catch (e) {}
@@ -1626,6 +1661,33 @@ function addWaypointSlot() {
 }
 
 // -------------------- AUTO OUT-OF-AREA & MULTI-STOP ANALYZER --------------------
+const NORTH_PROVINCES = ["สุโขทัย", "พิษณุโลก", "เชียงใหม่", "เชียงราย", "แม่ฮ่องสอน"];
+const NORTH_MIN_CHARGES = { sedan: 800, suv: 1000, vip_van: 1300 };
+
+function setStopRegionUI(region) {
+  state.extras.stopRegion = region;
+  document.querySelectorAll("#stop-region-buttons [data-stopregion]").forEach((b) => {
+    b.classList.toggle("active", b.dataset.stopregion === region);
+  });
+  const southGroup = document.getElementById("south-stop-rate-group");
+  if (southGroup) {
+    southGroup.classList.toggle("hidden", region !== "south");
+  }
+}
+
+function isNorthRouteActive() {
+  const activeTrip = DB && Array.isArray(DB.trips)
+    ? DB.trips.find((t) => t.id === state.selectedTripId)
+    : null;
+  if (activeTrip && (activeTrip.isNorthRoute || activeTrip.zoneId === "north_sukhothai")) {
+    return true;
+  }
+  const validStops = state.stops.filter(
+    (s) => typeof s.lat === "number" && typeof s.lng === "number" && !isNaN(s.lat)
+  );
+  return validStops.some((s) => NORTH_PROVINCES.includes(detectProvinceName(s.lat, s.lng)));
+}
+
 function updateOutAreaPillButtonsUI() {
   document.querySelectorAll("#outarea-pill-buttons [data-outarea]").forEach((btn) => {
     btn.classList.toggle("active", Number(btn.dataset.outarea) === Number(state.extras.tourOutArea || 0));
@@ -1678,8 +1740,21 @@ function analyzeRouteProvincesAndOutArea() {
     outAreaShort = "นอกพื้นที่ใกล้ๆ (+500฿)";
   }
 
+  const activeTrip = DB && Array.isArray(DB.trips)
+    ? DB.trips.find((t) => t.id === state.selectedTripId)
+    : null;
+  const isNorth = isNorthRouteActive();
+
+  if (isNorth) {
+    setStopRegionUI("north");
+  }
+
   if (state.autoDetectOutArea) {
-    state.extras.tourOutArea = recommendedOutArea;
+    if (state.pricingMode === "trip" && activeTrip && activeTrip.isNorthRoute) {
+      state.extras.tourOutArea = 0;
+    } else {
+      state.extras.tourOutArea = recommendedOutArea;
+    }
     updateOutAreaPillButtonsUI();
   }
 
@@ -1977,9 +2052,16 @@ function calculateVehiclePrice(vehicle) {
   const effectiveKm = Number((state.totalDistanceKm * multiplier).toFixed(1));
   const baseFare = Number(vehicle.baseFare || 0);
 
-  const kmBaseChosen = baseFare + Math.round(effectiveKm * chosenRate);
-  const kmBaseMin = baseFare + Math.round(effectiveKm * minR);
-  const kmBaseMax = baseFare + Math.round(effectiveKm * maxR);
+  const isNorth = isNorthRouteActive();
+  const northMin = isNorth ? (NORTH_MIN_CHARGES[vehicle.id] || 0) : 0;
+  const rawKmBaseChosen = baseFare + Math.round(effectiveKm * chosenRate);
+  const rawKmBaseMin = baseFare + Math.round(effectiveKm * minR);
+  const rawKmBaseMax = baseFare + Math.round(effectiveKm * maxR);
+
+  const kmBaseChosen = northMin > 0 ? Math.max(northMin, rawKmBaseChosen) : rawKmBaseChosen;
+  const kmBaseMin = northMin > 0 ? Math.max(northMin, rawKmBaseMin) : rawKmBaseMin;
+  const kmBaseMax = northMin > 0 ? Math.max(northMin, rawKmBaseMax) : rawKmBaseMax;
+  const appliedNorthMin = northMin > 0 && rawKmBaseChosen < northMin;
   const kmTotalWithExtras = Math.max(0, kmBaseChosen + extrasInfo.totalExtra - discount);
 
   const hasTableRate = Boolean(activeTrip && activeTrip.rates && activeTrip.rates[vehicle.id]);
@@ -2007,8 +2089,12 @@ function calculateVehiclePrice(vehicle) {
     grandTotal = kmTotalWithExtras;
     grandMin = Math.max(0, kmBaseMin + extrasInfo.totalExtra - discount);
     grandMax = Math.max(0, kmBaseMax + extrasInfo.totalExtra - discount);
-    modeLabelTh = `คิดตาม กม. (${effectiveKm} กม. × ฿${chosenRate})`;
-    breakdownTh = `${effectiveKm} กม. × ฿${chosenRate}/กม. = ฿${formatNumber(kmBaseChosen)}`;
+    modeLabelTh = appliedNorthMin
+      ? `คิดตาม กม. (ขั้นต่ำภาคเหนือ ฿${formatNumber(northMin)})`
+      : `คิดตาม กม. (${effectiveKm} กม. × ฿${chosenRate})`;
+    breakdownTh = appliedNorthMin
+      ? `${effectiveKm} กม. × ฿${chosenRate}/กม. (ขั้นต่ำภาคเหนือ ฿${formatNumber(northMin)}) = ฿${formatNumber(kmBaseChosen)}`
+      : `${effectiveKm} กม. × ฿${chosenRate}/กม. = ฿${formatNumber(kmBaseChosen)}`;
   }
 
   const allParts = [breakdownTh, ...extrasInfo.partsTh];
@@ -2487,15 +2573,7 @@ function bindEvents() {
 
   document.querySelectorAll("#stop-region-buttons [data-stopregion]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll("#stop-region-buttons [data-stopregion]").forEach((b) =>
-        b.classList.remove("active")
-      );
-      btn.classList.add("active");
-      state.extras.stopRegion = btn.dataset.stopregion;
-      const southGroup = document.getElementById("south-stop-rate-group");
-      if (southGroup) {
-        southGroup.classList.toggle("hidden", state.extras.stopRegion !== "south");
-      }
+      setStopRegionUI(btn.dataset.stopregion);
       renderPricingAndChat();
     });
   });
