@@ -678,6 +678,222 @@ select:focus {
   z-index: 9999;
 }
 
+/* Mobile Sticky Summary Bar & PWA Install Modal */
+.mobile-sticky-bar {
+  display: none;
+}
+
+.pwa-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.pwa-modal-card {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 420px;
+  width: 100%;
+  padding: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.pwa-warn-box {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  margin-bottom: 12px;
+  line-height: 1.45;
+}
+
+.pwa-step-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 84px;
+  }
+
+  .topbar {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .brand-logo {
+    width: 34px;
+    height: 34px;
+    font-size: 1.2rem;
+  }
+
+  .topbar-brand h1 {
+    font-size: 0.92rem;
+  }
+
+  .topbar-brand p {
+    display: none;
+  }
+
+  .topbar-nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .nav-btn {
+    flex: 1;
+    padding: 8px 8px;
+    font-size: 0.78rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .tab-panel {
+    padding: 10px 10px;
+  }
+
+  .card {
+    padding: 12px 12px;
+    border-radius: 12px;
+  }
+
+  .card-header h2 {
+    font-size: 0.92rem;
+  }
+
+  /* Prevent iOS Safari auto-zoom on input focus */
+  input[type="text"],
+  input[type="number"],
+  input[type="password"],
+  select {
+    font-size: 16px !important;
+    min-height: 42px;
+  }
+
+  .btn {
+    min-height: 40px;
+    font-size: 0.84rem;
+  }
+
+  .btn-sm {
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  .pill-btn {
+    min-height: 38px;
+    padding: 7px 10px;
+    font-size: 0.8rem;
+  }
+
+  /* Keep 3 vehicles side-by-side in a compact row on mobile */
+  .vehicle-cards-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px;
+  }
+
+  .vehicle-card {
+    padding: 8px 6px;
+    border-radius: 10px;
+    text-align: center;
+    gap: 3px;
+  }
+
+  .veh-info h4 {
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+
+  .veh-price strong {
+    font-size: 1.05rem;
+  }
+
+  .veh-price span {
+    font-size: 0.65rem;
+    display: block;
+    line-height: 1.2;
+  }
+
+  .total-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .total-amount {
+    font-size: 1.45rem;
+  }
+
+  .map-container {
+    height: 220px;
+  }
+
+  .toast {
+    bottom: 82px;
+    right: 12px;
+    left: 12px;
+    text-align: center;
+  }
+
+  .mobile-sticky-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    z-index: 950;
+    box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.25);
+  }
+
+  .mobile-sticky-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .mobile-sticky-info span {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-sticky-info strong {
+    font-size: 1.15rem;
+    color: #38bdf8;
+    line-height: 1.2;
+  }
+
+  .mobile-sticky-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -693,6 +909,7 @@ select:focus {
     <nav class="topbar-nav">
       <button class="nav-btn active" data-tab="tab-vehicles">🚐 คำนวณระยะทาง & เรทราคา</button>
       <button class="nav-btn" data-tab="tab-database">🏖️ ตารางทัวร์ & คลังสถานที่</button>
+      <button id="btn-install-pwa" class="nav-btn" title="ติดตั้งแอปลงมือถือ">📲 ติดตั้งแอป</button>
       <button id="btn-lock-app" class="nav-btn" title="ล็อกหน้าจอ">🔒 ล็อก</button>
     </nav>
   </header>
@@ -772,7 +989,11 @@ select:focus {
           </div>
         </div>
 
-        <!-- Map right in view -->
+        <!-- Map right in view (with toggle for mobile) -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;margin-bottom:6px;">
+          <span class="sub-text">🗺️ แผนที่เส้นทาง (แตะที่แผนที่เพื่อปักหมุดได้)</span>
+          <button id="btn-toggle-map" type="button" class="btn btn-outline btn-sm">ซ่อนแผนที่ ▴</button>
+        </div>
         <div id="map" class="map-container"></div>
       </section>
 
@@ -1034,6 +1255,43 @@ select:focus {
       </section>
     </div>
   </main>
+
+  <!-- Mobile Sticky Bottom Summary Bar -->
+  <div id="mobile-sticky-bar" class="mobile-sticky-bar">
+    <div class="mobile-sticky-info">
+      <span id="mobile-sticky-vehicle">Sedan • -</span>
+      <strong id="mobile-sticky-price">฿0 THB</strong>
+    </div>
+    <div class="mobile-sticky-actions">
+      <button id="btn-sticky-scroll" type="button" class="btn btn-outline btn-sm" style="background:rgba(255,255,255,0.12);color:#fff;border-color:rgba(255,255,255,0.22);">⬆️ ดูราคา</button>
+      <button id="btn-sticky-copy" type="button" class="btn btn-primary btn-sm">📋 คัดลอกราคา</button>
+    </div>
+  </div>
+
+  <!-- PWA Install Guide Modal -->
+  <div id="pwa-install-modal" class="pwa-modal-backdrop hidden">
+    <div class="pwa-modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3 style="font-size:1.05rem;color:#0f172a;">📲 เอาแอปลงหน้าจอมือถือ</h3>
+        <button id="btn-close-pwa-modal" type="button" class="btn btn-outline btn-sm">ปิด ✕</button>
+      </div>
+      <div id="pwa-inapp-warning" class="pwa-warn-box hidden">
+        ⚠️ <strong>ตอนนี้เปิดผ่านแอป LINE / Facebook / IG</strong> จึงยังเพิ่มไอคอนลงหน้าจอไม่ได้<br />
+        👉 ให้กดปุ่ม <strong>จุด 3 จุด (⋯)</strong> หรือ <strong>ปุ่มแชร์</strong> แล้วเลือก <strong>"เปิดใน Safari"</strong> (iPhone) หรือ <strong>"เปิดใน Chrome"</strong> (Android) ก่อนนะครับ
+      </div>
+      <div class="pwa-step-box">
+        <strong>🍎 สำหรับ iPhone / iPad (ต้องเปิดใน Safari):</strong><br />
+        1. กดปุ่ม <strong>แชร์ (⬆️ สี่เหลี่ยมมีลูกศรชี้ขึ้น)</strong> ที่แถบด้านล่าง<br />
+        2. เลื่อนลงแล้วกด <strong>"เพิ่มไปยังหน้าจอโฮม" (Add to Home Screen)</strong> → กด <strong>เพิ่ม</strong>
+      </div>
+      <div class="pwa-step-box">
+        <strong>🤖 สำหรับ Android (เปิดใน Chrome):</strong><br />
+        1. กดปุ่ม <strong>⋮ (จุด 3 จุด)</strong> มุมขวาบนของ Chrome<br />
+        2. เลือก <strong>"ติดตั้งแอป" (Install app)</strong> หรือ <strong>"เพิ่มลงในหน้าจอหลัก"</strong>
+      </div>
+      <button id="btn-pwa-trigger-native" type="button" class="btn btn-primary hidden" style="width:100%;margin-top:4px;">⚡ กดเพื่อติดตั้งแอปทันที</button>
+    </div>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -2253,6 +2511,11 @@ function renderPricingAndChat() {
     document.getElementById("summary-total-price").textContent = `฿${formatNumber(selectedResult.grandTotal)} THB`;
     document.getElementById("summary-breakdown-text").textContent = selectedResult.fullBreakdownTh;
     document.getElementById("output-special-request").value = selectedResult.specialReqString || "-";
+
+    const stickyVeh = document.getElementById("mobile-sticky-vehicle");
+    const stickyPrice = document.getElementById("mobile-sticky-price");
+    if (stickyVeh) stickyVeh.textContent = `${selectedResult.vehicle.nameEn} • ${state.totalDistanceKm.toFixed(1)} กม.`;
+    if (stickyPrice) stickyPrice.textContent = `฿${formatNumber(selectedResult.grandTotal)} THB`;
   }
 }
 
@@ -2891,6 +3154,100 @@ window.addEventListener("DOMContentLoaded", async () => {
         navigator.serviceWorker.register("./sw.js").catch(() => {});
       });
     }
+
+    // -------------------- MOBILE UX & PWA INSTALL HANDLER --------------------
+    (function () {
+      const toggleMapBtn = document.getElementById("btn-toggle-map");
+      const mapEl = document.getElementById("map");
+      if (toggleMapBtn && mapEl) {
+        toggleMapBtn.addEventListener("click", () => {
+          const isHidden = mapEl.classList.toggle("hidden");
+          toggleMapBtn.textContent = isHidden ? "แสดงแผนที่ ▾" : "ซ่อนแผนที่ ▴";
+          if (!isHidden && map) {
+            setTimeout(() => map.invalidateSize(), 150);
+          }
+        });
+      }
+
+      const stickyScrollBtn = document.getElementById("btn-sticky-scroll");
+      if (stickyScrollBtn) {
+        stickyScrollBtn.addEventListener("click", () => {
+          const target = document.getElementById("vehicle-cards-container");
+          if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+
+      const stickyCopyBtn = document.getElementById("btn-sticky-copy");
+      if (stickyCopyBtn) {
+        stickyCopyBtn.addEventListener("click", () => {
+          const veh = document.getElementById("summary-vehicle-name")?.textContent || "";
+          const price = document.getElementById("summary-total-price")?.textContent || "";
+          const routeText = getRouteEnText();
+          const spec = document.getElementById("output-special-request")?.value || "";
+          const lines = [routeText, veh, `Total: ${price}`];
+          if (spec && spec !== "-") lines.push(`Note: ${spec}`);
+          const textToCopy = lines.join("\n");
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textToCopy).then(() => showToast("คัดลอกสรุปราคาแล้วค่ะ"));
+          }
+        });
+      }
+
+      let deferredPrompt = null;
+      const installBtn = document.getElementById("btn-install-pwa");
+      const modal = document.getElementById("pwa-install-modal");
+      const closeModalBtn = document.getElementById("btn-close-pwa-modal");
+      const nativeBtn = document.getElementById("btn-pwa-trigger-native");
+      const inappWarn = document.getElementById("pwa-inapp-warning");
+
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+      if (isStandalone && installBtn) {
+        installBtn.classList.add("hidden");
+      }
+
+      const ua = navigator.userAgent || "";
+      if (inappWarn && /Line\/|FBAN|FBAV|Instagram/i.test(ua)) {
+        inappWarn.classList.remove("hidden");
+      }
+
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (nativeBtn) nativeBtn.classList.remove("hidden");
+      });
+
+      async function triggerNativeInstall() {
+        if (!deferredPrompt) return false;
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        if (nativeBtn) nativeBtn.classList.add("hidden");
+        if (modal) modal.classList.add("hidden");
+        if (choice && choice.outcome === "accepted") {
+          showToast("กำลังติดตั้งแอปลงหน้าจอมือถือ...");
+        }
+        return true;
+      }
+
+      if (installBtn) {
+        installBtn.addEventListener("click", async () => {
+          if (deferredPrompt) {
+            await triggerNativeInstall();
+          } else if (modal) {
+            modal.classList.remove("hidden");
+          }
+        });
+      }
+      if (nativeBtn) {
+        nativeBtn.addEventListener("click", triggerNativeInstall);
+      }
+      if (closeModalBtn && modal) {
+        closeModalBtn.addEventListener("click", () => modal.classList.add("hidden"));
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) modal.classList.add("hidden");
+        });
+      }
+    })();
   </script>
 </body>
 </html>
