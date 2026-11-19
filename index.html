@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Smile Taxi Service — คำนวณระยะทาง กม. & ราคาทัวร์อัตโนมัติ</title>
   <meta name="theme-color" content="#0f172a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -41,12 +41,38 @@
   padding: 0;
 }
 
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: "Prompt", -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg);
   color: var(--text);
   line-height: 1.45;
   padding-bottom: 32px;
+  touch-action: pan-y;
+}
+
+.calc-grid > *,
+.db-grid > *,
+.card,
+.form-group,
+.form-group.flex-2,
+.route-builder-box,
+.input-with-btn {
+  min-width: 0;
+  max-width: 100%;
+}
+
+select {
+  max-width: 100%;
+  text-overflow: ellipsis;
 }
 
 /* Topbar */
@@ -842,6 +868,17 @@ select:focus {
 
   .map-container {
     height: 220px;
+  }
+
+  #select-quick-place-insert {
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  .form-group,
+  .form-group.flex-2 {
+    min-width: 0 !important;
+    width: 100%;
   }
 
   .toast {
