@@ -6,7 +6,7 @@
   <title>Smile Taxi Service — คำนวณระยะทาง กม. & ราคาทัวร์อัตโนมัติ</title>
   <meta name="theme-color" content="#0f172a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="Smile Taxi CS" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" type="image/png" href="./icon-192.png" />
@@ -755,19 +755,23 @@ select:focus {
     padding-bottom: 84px;
   }
 
+  .hide-mobile {
+    display: none;
+  }
+
   .topbar {
-    padding: 8px 12px;
+    padding: calc(10px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
     gap: 8px;
   }
 
   .brand-logo {
-    width: 34px;
-    height: 34px;
-    font-size: 1.2rem;
+    width: 32px;
+    height: 32px;
+    font-size: 1.15rem;
   }
 
   .topbar-brand h1 {
-    font-size: 0.92rem;
+    font-size: 0.9rem;
   }
 
   .topbar-brand p {
@@ -777,15 +781,17 @@ select:focus {
   .topbar-nav {
     width: 100%;
     justify-content: space-between;
-    gap: 6px;
+    gap: 5px;
   }
 
   .nav-btn {
     flex: 1;
-    padding: 8px 8px;
-    font-size: 0.78rem;
+    padding: 8px 4px;
+    font-size: 0.76rem;
     text-align: center;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .tab-panel {
@@ -944,9 +950,9 @@ select:focus {
       </div>
     </div>
     <nav class="topbar-nav">
-      <button class="nav-btn active" data-tab="tab-vehicles">🚐 คำนวณระยะทาง & เรทราคา</button>
-      <button class="nav-btn" data-tab="tab-database">🏖️ ตารางทัวร์ & คลังสถานที่</button>
-      <button id="btn-install-pwa" class="nav-btn" title="ติดตั้งแอปลงมือถือ">📲 ติดตั้งแอป</button>
+      <button class="nav-btn active" data-tab="tab-vehicles">🚐 คำนวณ<span class="hide-mobile">ระยะทาง & เรทราคา</span></button>
+      <button class="nav-btn" data-tab="tab-database">🏖️ ตารางทัวร์<span class="hide-mobile"> & คลังสถานที่</span></button>
+      <button id="btn-install-pwa" class="nav-btn" title="ติดตั้งแอปลงมือถือ">📲 <span class="hide-mobile">ติดตั้ง</span>แอป</button>
       <button id="btn-lock-app" class="nav-btn" title="ล็อกหน้าจอ">🔒 ล็อก</button>
     </nav>
   </header>
